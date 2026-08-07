@@ -38,7 +38,7 @@ func decodeCommand(command string) (*Command, error) {
 					fmt.Print("unable to execute\n")
 					return nil, fmt.Errorf("Unexecutable")
 				}
-				return nil, nil
+				return &Command{keyword: "exec"}, nil
 			}
 		}
 		return nil, fmt.Errorf("Unknown command")
@@ -93,6 +93,8 @@ func handleCommand(command *Command, paths []string) {
 		fmt.Printf("%s\n", strings.Join(command.parts, " "))
 	case "exit":
 		os.Exit(0)
+	case "exec":
+		return
 	}
 }
 
