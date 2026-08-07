@@ -62,7 +62,7 @@ func main() {
 					if checkPath(full) {
 						fmt.Printf("%s is %s\n", command.parts[0], full)
 						found = true
-						//break
+						break
 					}
 				}
 				if !found {
@@ -82,7 +82,7 @@ func checkPath(path string) bool {
 	if err != nil {
 		return false
 	}
-	if info.Mode().IsRegular() && info.Mode()&0x111 != 0 {
+	if info.Mode().IsRegular() && info.Mode()&0111 != 0 {
 		return true
 	}
 	return false
