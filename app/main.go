@@ -48,7 +48,7 @@ func decodeCommand(command string) (*Command, error) {
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
 		ch := command[i]
-		if ch == '\\' && i != len(command)-1 {
+		if (!inSingleQuote) && (ch == '\\' && i != len(command)-1) {
 			i++
 			ch = command[i]
 			curr.WriteByte(ch)
