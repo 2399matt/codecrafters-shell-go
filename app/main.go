@@ -96,6 +96,7 @@ func handleCommand(command *Command, paths []string) {
 	case "exit":
 		os.Exit(0)
 	case "exec":
+		fmt.Print("\n")
 		return
 	}
 }
