@@ -52,6 +52,7 @@ func decodeCommand(command string) (*Command, error) {
 			i++
 			ch = command[i]
 			curr.WriteByte(ch)
+			continue
 		}
 		if ch == '"' {
 			inDoubleQuote = !inDoubleQuote
