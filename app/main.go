@@ -59,7 +59,8 @@ func decodeCommand(command string) (*Command, error) {
 			continue
 		}
 		if ch == '\'' {
-			start := i + 1
+			i++
+			start := i
 			for i < len(command) && command[i] != '\'' {
 				i++
 			}
