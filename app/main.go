@@ -105,6 +105,10 @@ func handleCommand(command *Command, paths []string) {
 		os.Exit(0)
 	case "exec":
 		return
+	case "pwd":
+		if wd, err := os.Getwd(); err == nil {
+			fmt.Printf("%s", wd)
+		}
 	}
 }
 
