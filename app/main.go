@@ -34,7 +34,7 @@ func main() {
 			fmt.Printf("%s: command not found\n", strInput)
 			continue
 		}
-		handleCommand(command, paths)
+		handleCommand(command)
 	}
 }
 
@@ -57,26 +57,7 @@ func decodeCommand(command string) (*Command, error) {
 	return cmd, nil
 }
 
-func handleExec(input []string) bool {
-	for _, path := range paths {
-		full := filepath.Join(path, input[0])
-		if checkPath(full) {
-			cmd := exec.Command(input[0])
-			if len(input) > 1 {
-				cmd.Args = append(cmd.Args, input[1:]...)
-			}
-			if out, err := cmd.Output(); err != nil {
-				return false
-			} else {
-				fmt.Printf("%s", out)
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func handleCommand(command *Command, paths []string) {
+func handleCommand(command *Command) {
 	switch command.keyword {
 	case "type":
 		if len(command.parts) == 0 {
@@ -86,16 +67,9 @@ func handleCommand(command *Command, paths []string) {
 		if slices.Contains(keywords, command.parts[0]) {
 			fmt.Printf("%s is a shell builtin\n", command.parts[0])
 		} else {
-			found := false
-			for _, path := range paths {
-				full := filepath.Join(path, command.parts[0])
-				if checkPath(full) {
-					fmt.Printf("%s is %s\n", command.parts[0], full)
-					found = true
-					break
-				}
-			}
-			if !found {
+			if handleTypeSearch(command) {
+				return
+			} else {
 				fmt.Printf("%s not found\n", command.parts[0])
 			}
 		}
@@ -118,7 +92,32 @@ func handleCommand(command *Command, paths []string) {
 	}
 }
 
+func handleExec(input []string) bool {
+	for _, path := range paths {
+		full := filepath.Join(path, input[0])
+		if checkPath(full) {
+			cmd := exec.Command(input[0])
+			if len(input) > 1 {
+				cmd.Args = append(cmd.Args, input[1:]...)
+			}
+			if out, err := cmd.Output(); err != nil {
+				return false
+			} else {
+				fmt.Printf("%s", out)
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func handleDirChange(path string) bool {
+	var err error
+	if !filepath.IsAbs(path) {
+		if path, err = filepath.Abs(path); err != nil {
+			return false
+		}
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return false
@@ -129,6 +128,17 @@ func handleDirChange(path string) bool {
 		}
 	}
 	return true
+}
+
+func handleTypeSearch(command *Command) bool {
+	for _, path := range paths {
+		full := filepath.Join(path, command.parts[0])
+		if checkPath(full) {
+			fmt.Printf("%s is %s\n", command.parts[0], full)
+			return true
+		}
+	}
+	return false
 }
 
 func checkPath(path string) bool {
