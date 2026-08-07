@@ -30,7 +30,7 @@ func decodeCommand(command string) (*Command, error) {
 		for _, path := range paths {
 			full := filepath.Join(path, arr[0])
 			if checkPath(full) {
-				cmd := exec.Command(full)
+				cmd := exec.Command(arr[0])
 				if len(arr) > 1 {
 					cmd.Args = append(cmd.Args, arr[1:]...)
 				}
