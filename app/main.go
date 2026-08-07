@@ -62,7 +62,7 @@ func main() {
 					if checkPath(full) {
 						fmt.Printf("%s is %s\n", command.parts[0], full)
 						found = true
-						break
+						//break
 					}
 				}
 				if !found {
