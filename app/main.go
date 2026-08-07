@@ -11,13 +11,14 @@ func main() {
 	scan := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("$ ")
-		input, _, err := scan.ReadLine()
+		input, err := scan.ReadBytes('\n')
+		command := input[:len(input)-1]
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
-		switch input {
+		switch command {
 		default:
-			fmt.Printf("%s: command not found\n", string(input))
+			fmt.Printf("%s: command not found\n", command)
 		}
 	}
 }
