@@ -82,7 +82,7 @@ func checkPath(path string) bool {
 	if err != nil {
 		return false
 	}
-	if info.Mode().IsRegular() && info.Mode().Perm()&0b0111 != 0 {
+	if info.Mode().IsRegular() && info.Mode().Perm()&0111 != 0 {
 		return true
 	}
 	return false
