@@ -69,11 +69,11 @@ func handleExec(input []string) bool {
 				return false
 			} else {
 				fmt.Printf("%s", out)
-				break
+				return true
 			}
 		}
 	}
-	return true
+	return false
 }
 
 func handleCommand(command *Command, paths []string) {
