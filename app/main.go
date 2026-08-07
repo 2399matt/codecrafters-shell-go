@@ -60,13 +60,13 @@ func main() {
 				for _, path := range paths {
 					full := filepath.Join(path, command.parts[0])
 					if checkPath(full) {
-						fmt.Printf("%s is %s", command.parts[0], full)
+						fmt.Printf("%s is %s\n", command.parts[0], full)
 						found = true
 						break
 					}
 				}
 				if !found {
-					fmt.Printf("%s not found", command.parts[0])
+					fmt.Printf("%s not found\n", command.parts[0])
 				}
 			}
 		case "echo":
