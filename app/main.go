@@ -45,32 +45,30 @@ func decodeCommand(command string) (*Command, error) {
 	parts := make([]string, 0)
 	inSingleQuote := false
 	inDoubleQuote := false
-	treatLiteral := false
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
-		ch := rune(command[i])
+		ch := command[i]
 		if ch == '\\' && i != len(command)-1 {
-			treatLiteral = true
 			i++
-			ch = rune(command[i])
+			ch = command[i]
+			curr.WriteByte(ch)
 		}
-		if !treatLiteral && ch == '"' {
+		if ch == '"' {
 			inDoubleQuote = !inDoubleQuote
 			continue
 		}
-		if !treatLiteral && ch == '\'' && !inDoubleQuote {
+		if ch == '\'' && !inDoubleQuote {
 			inSingleQuote = !inSingleQuote
 			continue
 		}
-		if !treatLiteral && unicode.IsSpace(ch) && !inSingleQuote && !inDoubleQuote {
+		if unicode.IsSpace(rune(ch)) && !inSingleQuote && !inDoubleQuote {
 			if curr.Len() > 0 {
 				parts = append(parts, curr.String())
 				curr.Reset()
 			}
 			continue
 		}
-		curr.WriteRune(ch)
-		treatLiteral = false
+		curr.WriteByte(ch)
 	}
 	if curr.Len() > 0 {
 		parts = append(parts, curr.String())
