@@ -113,7 +113,7 @@ func handleCommand(command *Command, paths []string) {
 		if handleDirChange(command.parts[0]) {
 			return
 		} else {
-			fmt.Printf("%s: %s: No such file or directory", command.keyword, command.parts[0])
+			fmt.Printf("%s: %s: No such file or directory\n", command.keyword, command.parts[0])
 		}
 	}
 }
