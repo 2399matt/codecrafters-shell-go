@@ -44,14 +44,18 @@ func decodeCommand(command string) (*Command, error) {
 	cmd := &Command{}
 	parts := make([]string, 0)
 	inSingleQuote := false
+	inDoubleQuote := false
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
 		ch := rune(command[i])
-		if ch == '\'' {
+		if ch == '"' {
+			inDoubleQuote = !inDoubleQuote
+		}
+		if ch == '\'' && !inDoubleQuote {
 			inSingleQuote = !inSingleQuote
 			continue
 		}
-		if unicode.IsSpace(ch) && !inSingleQuote {
+		if unicode.IsSpace(ch) && !inSingleQuote && !inDoubleQuote {
 			if curr.Len() > 0 {
 				parts = append(parts, curr.String())
 				curr.Reset()
@@ -63,7 +67,6 @@ func decodeCommand(command string) (*Command, error) {
 	if curr.Len() > 0 {
 		parts = append(parts, curr.String())
 	}
-	//arr := strings.Split(command, " ")
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("No command")
 	}
