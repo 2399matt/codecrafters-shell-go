@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 )
@@ -32,6 +34,7 @@ func decodeCommand(command string) (*Command, error) {
 
 func main() {
 	scan := bufio.NewReader(os.Stdin)
+	path := os.Getenv("PATH")
 	for {
 		fmt.Print("$ ")
 		input, err := scan.ReadBytes('\n')
@@ -53,7 +56,12 @@ func main() {
 			if slices.Contains(keywords, command.parts[0]) {
 				fmt.Printf("%s is a shell builtin\n", command.parts[0])
 			} else {
-				fmt.Printf("%s: not found\n", command.parts[0])
+				isExec := walkDir(command.parts[0], path)
+				if isExec == "" {
+					fmt.Printf("%s: not found\n", command.parts[0])
+				} else {
+					fmt.Printf("%s is %s", command.parts[0], isExec)
+				}
 			}
 		case "echo":
 			fmt.Printf("%s\n", strings.Join(command.parts, " "))
@@ -61,4 +69,28 @@ func main() {
 			os.Exit(0)
 		}
 	}
+}
+
+func walkDir(target, path string) string {
+	res := ""
+	err := filepath.WalkDir(path, func(path string, info fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() {
+			info, err := info.Info()
+			if err != nil {
+				return err
+			}
+			// 3 bits to signify exec properties
+			if info.Mode()&0111 != 0 {
+				res = path
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		fmt.Printf("Issue walking: %v", err)
+	}
+	return res
 }
