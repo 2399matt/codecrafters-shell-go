@@ -102,7 +102,8 @@ func handleCommand(command *Command) {
 			}
 		}
 	case "echo":
-		fmt.Printf("%s\n", strings.Join(command.parts, ""))
+		//TODO Join on nothing here due to new parser?
+		fmt.Printf("%s\n", strings.Join(command.parts, " "))
 	case "exit":
 		os.Exit(0)
 	case "exec":
