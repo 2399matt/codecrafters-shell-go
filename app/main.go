@@ -45,9 +45,13 @@ func decodeCommand(command string) (*Command, error) {
 	parts := make([]string, 0)
 	inSingleQuote := false
 	inDoubleQuote := false
+	treatLiteral := false
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
 		ch := rune(command[i])
+		if ch == '\\' {
+			treatLiteral = true
+		}
 		if ch == '"' {
 			inDoubleQuote = !inDoubleQuote
 			continue
@@ -64,6 +68,9 @@ func decodeCommand(command string) (*Command, error) {
 			continue
 		}
 		curr.WriteRune(ch)
+		if treatLiteral {
+			treatLiteral = false
+		}
 	}
 	if curr.Len() > 0 {
 		parts = append(parts, curr.String())
