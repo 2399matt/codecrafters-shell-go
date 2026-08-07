@@ -35,6 +35,7 @@ func decodeCommand(command string) (*Command, error) {
 func main() {
 	scan := bufio.NewReader(os.Stdin)
 	path := os.Getenv("PATH")
+	paths := strings.Split(path, ":")
 	for {
 		fmt.Print("$ ")
 		input, err := scan.ReadBytes('\n')
@@ -56,7 +57,13 @@ func main() {
 			if slices.Contains(keywords, command.parts[0]) {
 				fmt.Printf("%s is a shell builtin\n", command.parts[0])
 			} else {
-				isExec := walkDir(command.parts[0], path)
+				var isExec string
+				for i := range paths {
+					isExec = walkDir(command.parts[0], paths[i])
+					if isExec != "" {
+						break
+					}
+				}
 				if isExec == "" {
 					fmt.Printf("%s: not found\n", command.parts[0])
 				} else {
@@ -78,13 +85,15 @@ func walkDir(target, path string) string {
 			return err
 		}
 		if !info.IsDir() {
-			info, err := info.Info()
-			if err != nil {
-				return err
-			}
-			// 3 bits to signify exec properties
-			if info.Mode()&0111 != 0 {
-				res = path
+			if strings.Contains(info.Name(), target) {
+				info, err := info.Info()
+				if err != nil {
+					return err
+				}
+				// 3 bits to signify exec properties
+				if info.Mode()&0111 != 0 {
+					res = path
+				}
 			}
 		}
 		return nil
