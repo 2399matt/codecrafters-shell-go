@@ -56,7 +56,6 @@ func decodeCommand(command string) (*Command, error) {
 				i++
 			}
 			parts = append(parts, command[start:i])
-			i++
 			continue
 		}
 		if ch == '\'' {
@@ -65,7 +64,6 @@ func decodeCommand(command string) (*Command, error) {
 				i++
 			}
 			parts = append(parts, command[start:i])
-			i++
 			continue
 		}
 	}
