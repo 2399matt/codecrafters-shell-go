@@ -114,6 +114,12 @@ func handleExec(input []string) bool {
 
 func handleDirChange(path string) bool {
 	var err error
+	if path == "~" {
+		if err = os.Chdir(home); err != nil {
+			return false
+		}
+		return true
+	}
 	if !filepath.IsAbs(path) {
 		if path, err = filepath.Abs(path); err != nil {
 			return false
