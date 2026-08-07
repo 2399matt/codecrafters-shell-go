@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var keywords = []string{"echo", "exit", "type"}
+var keywords = []string{"echo", "exit", "type", "pwd"}
 var path string = os.Getenv("PATH")
 var paths []string = strings.Split(path, ":")
 
