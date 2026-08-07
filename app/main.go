@@ -44,29 +44,25 @@ func decodeCommand(command string) (*Command, error) {
 	cmd := &Command{}
 	i := 0
 	parts := make([]string, 0)
-	for i < len(command) {
+	inSingleQuote := false
+	var curr strings.Builder
+	for i := 0; i < len(command); i++ {
 		ch := rune(command[i])
-		if unicode.IsSpace(ch) {
-			i++
-			continue
-		}
-		if unicode.IsLetter(ch) || unicode.IsNumber(ch) {
-			start := i
-			for i < len(command) && !unicode.IsSpace(rune(command[i])) {
-				i++
-			}
-			parts = append(parts, command[start:i])
-			continue
-		}
 		if ch == '\'' {
-			i++
-			start := i
-			for i < len(command) && command[i] != '\'' {
-				i++
-			}
-			parts = append(parts, command[start:i])
+			inSingleQuote = !inSingleQuote
 			continue
 		}
+		if unicode.IsSpace(ch) && !inSingleQuote {
+			if curr.Len() > 0 {
+				parts = append(parts, curr.String())
+				curr.Reset()
+			}
+			continue
+		}
+		curr.WriteRune(ch)
+	}
+	if curr.Len() > 0 {
+		parts = append(parts, curr.String())
 	}
 	//arr := strings.Split(command, " ")
 	if len(parts) == 0 {
