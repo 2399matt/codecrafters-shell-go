@@ -112,12 +112,12 @@ func handleExec(input []string) bool {
 }
 
 func handleDirChange(path string) bool {
-	var err error
-	if !filepath.IsAbs(path) {
-		if path, err = filepath.Abs(path); err != nil {
-			return false
-		}
-	}
+	// var err error
+	// if !filepath.IsAbs(path) {
+	// 	if path, err = filepath.Abs(path); err != nil {
+	// 		return false
+	// 	}
+	// }
 	info, err := os.Stat(path)
 	if err != nil {
 		return false
