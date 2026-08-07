@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -12,11 +13,13 @@ func main() {
 	for {
 		fmt.Print("$ ")
 		input, err := scan.ReadBytes('\n')
-		command := input[:len(input)-1]
+		command := strings.TrimSpace(string(input[:len(input)-1]))
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
 		switch command {
+		case "exit":
+			os.Exit(0)
 		default:
 			fmt.Printf("%s: command not found\n", command)
 		}
