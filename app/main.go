@@ -34,9 +34,11 @@ func decodeCommand(command string) (*Command, error) {
 				if len(arr) > 1 {
 					cmd.Args = append(cmd.Args, arr[1:]...)
 				}
-				if err := cmd.Run(); err != nil {
+				if out, err := cmd.Output(); err != nil {
 					fmt.Print("unable to execute\n")
 					return nil, fmt.Errorf("Unexecutable")
+				} else {
+					fmt.Printf("%s\n", out)
 				}
 				return &Command{keyword: "exec"}, nil
 			}
