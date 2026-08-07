@@ -50,6 +50,7 @@ func decodeCommand(command string) (*Command, error) {
 		ch := rune(command[i])
 		if ch == '"' {
 			inDoubleQuote = !inDoubleQuote
+			continue
 		}
 		if ch == '\'' && !inDoubleQuote {
 			inSingleQuote = !inSingleQuote
