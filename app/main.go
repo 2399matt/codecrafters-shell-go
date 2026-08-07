@@ -68,7 +68,7 @@ func handleExec(input []string) bool {
 			if out, err := cmd.Output(); err != nil {
 				return false
 			} else {
-				fmt.Printf("%s\n", out)
+				fmt.Printf("%s", out)
 				break
 			}
 		}
