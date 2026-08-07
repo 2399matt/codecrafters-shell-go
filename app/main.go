@@ -49,6 +49,12 @@ func decodeCommand(command string) (*Command, error) {
 	for i := 0; i < len(command); i++ {
 		ch := command[i]
 		if (!inSingleQuote) && (ch == '\\' && i != len(command)-1) {
+			if inDoubleQuote {
+				temp := command[i+1]
+				if temp != '"' && temp != '\\' {
+					continue
+				}
+			}
 			i++
 			ch = command[i]
 			curr.WriteByte(ch)
