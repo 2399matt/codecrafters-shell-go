@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -57,17 +56,17 @@ func main() {
 			if slices.Contains(keywords, command.parts[0]) {
 				fmt.Printf("%s is a shell builtin\n", command.parts[0])
 			} else {
-				var isExec string
-				for i := range paths {
-					isExec = walkDir(command.parts[0], paths[i])
-					if isExec != "" {
+				found := false
+				for _, path := range paths {
+					full := filepath.Join(path, command.parts[0])
+					if checkPath(full) {
+						fmt.Printf("%s is %s", command.parts[0], full)
+						found = true
 						break
 					}
 				}
-				if isExec == "" {
-					fmt.Printf("%s: not found\n", command.parts[0])
-				} else {
-					fmt.Printf("%s is %s", command.parts[0], isExec)
+				if !found {
+					fmt.Printf("%s not found", command.parts[0])
 				}
 			}
 		case "echo":
@@ -78,28 +77,13 @@ func main() {
 	}
 }
 
-func walkDir(target, path string) string {
-	res := ""
-	err := filepath.WalkDir(path, func(path string, info fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			if strings.Contains(info.Name(), target) {
-				info, err := info.Info()
-				if err != nil {
-					return err
-				}
-				// 3 bits to signify exec properties
-				if info.Mode()&0111 != 0 {
-					res = path
-				}
-			}
-		}
-		return nil
-	})
+func checkPath(path string) bool {
+	info, err := os.Stat(path)
 	if err != nil {
-		fmt.Printf("Issue walking: %v", err)
+		return false
 	}
-	return res
+	if info.Mode()&0x111 != 0 {
+		return true
+	}
+	return false
 }
