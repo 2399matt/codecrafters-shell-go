@@ -62,7 +62,7 @@ func decodeCommand(command string) (*Command, error) {
 			inSingleQuote = !inSingleQuote
 			continue
 		}
-		if unicode.IsSpace(ch) && !inSingleQuote && !inDoubleQuote {
+		if !treatLiteral && unicode.IsSpace(ch) && !inSingleQuote && !inDoubleQuote {
 			if curr.Len() > 0 {
 				parts = append(parts, curr.String())
 				curr.Reset()
