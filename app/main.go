@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
@@ -41,20 +42,47 @@ func main() {
 
 func decodeCommand(command string) (*Command, error) {
 	cmd := &Command{}
-	arr := strings.Split(command, " ")
-	if len(arr) == 0 {
+	i := 0
+	parts := make([]string, 0)
+	for i < len(command) {
+		ch := rune(command[i])
+		if unicode.IsSpace(ch) {
+			i++
+			continue
+		}
+		if unicode.IsLetter(ch) || unicode.IsNumber(ch) {
+			start := i
+			for i < len(command) && !unicode.IsSpace(rune(command[i])) {
+				i++
+			}
+			parts = append(parts, command[start:i])
+			i++
+			continue
+		}
+		if ch == '\'' {
+			start := i + 1
+			for i < len(command) && command[i] != '\'' {
+				i++
+			}
+			parts = append(parts, command[start:i])
+			i++
+			continue
+		}
+	}
+	//arr := strings.Split(command, " ")
+	if len(parts) == 0 {
 		return nil, fmt.Errorf("No command")
 	}
-	if !slices.Contains(keywords, arr[0]) {
-		if handleExec(arr) {
+	if !slices.Contains(keywords, parts[0]) {
+		if handleExec(parts) {
 			cmd.keyword = "exec"
 			return cmd, nil
 		} else {
 			return nil, fmt.Errorf("Unknown command")
 		}
 	}
-	cmd.keyword = arr[0]
-	cmd.parts = arr[1:]
+	cmd.keyword = parts[0]
+	cmd.parts = parts[1:]
 	return cmd, nil
 }
 
