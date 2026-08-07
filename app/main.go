@@ -49,14 +49,16 @@ func decodeCommand(command string) (*Command, error) {
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
 		ch := rune(command[i])
-		if ch == '\\' {
+		if ch == '\\' && i != len(command)-1 {
 			treatLiteral = true
+			i++
+			ch = rune(command[i])
 		}
-		if ch == '"' {
+		if !treatLiteral && ch == '"' {
 			inDoubleQuote = !inDoubleQuote
 			continue
 		}
-		if ch == '\'' && !inDoubleQuote {
+		if !treatLiteral && ch == '\'' && !inDoubleQuote {
 			inSingleQuote = !inSingleQuote
 			continue
 		}
@@ -68,9 +70,7 @@ func decodeCommand(command string) (*Command, error) {
 			continue
 		}
 		curr.WriteRune(ch)
-		if treatLiteral {
-			treatLiteral = false
-		}
+		treatLiteral = false
 	}
 	if curr.Len() > 0 {
 		parts = append(parts, curr.String())
