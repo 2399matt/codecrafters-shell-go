@@ -102,7 +102,7 @@ func handleCommand(command *Command) {
 			}
 		}
 	case "echo":
-		fmt.Printf("%s\n", strings.Join(command.parts, " "))
+		fmt.Printf("%s\n", strings.Join(command.parts, ""))
 	case "exit":
 		os.Exit(0)
 	case "exec":
