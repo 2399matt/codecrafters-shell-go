@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var keywords = []string{"echo", "exit"}
+var keywords = []string{"echo", "exit", "type"}
 
 type Command struct {
 	keyword string
@@ -45,6 +45,16 @@ func main() {
 			continue
 		}
 		switch command.keyword {
+		case "type":
+			if len(command.parts) == 0 {
+				fmt.Printf("Usage: 'type keyword'\n")
+				continue
+			}
+			if slices.Contains(keywords, command.parts[0]) {
+				fmt.Printf("%s is a shell builtin\n", command.parts[0])
+			} else {
+				fmt.Printf("%s: not found\n", command.parts[0])
+			}
 		case "echo":
 			fmt.Printf("%s\n", strings.Join(command.parts, " "))
 		case "exit":
