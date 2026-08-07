@@ -31,7 +31,7 @@ func main() {
 		strInput := strings.TrimSpace(string(input[:len(input)-1]))
 		command, err := decodeCommand(strInput)
 		if err != nil {
-			fmt.Printf("%s: not found\n", strInput)
+			fmt.Printf("%s: command not found\n", strInput)
 			continue
 		}
 		handleCommand(command, paths)
