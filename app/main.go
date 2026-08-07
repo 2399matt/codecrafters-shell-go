@@ -13,6 +13,7 @@ import (
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
 var path string = os.Getenv("PATH")
+var home string = os.Getenv("HOME")
 var paths []string = strings.Split(path, ":")
 
 type Command struct {
@@ -112,12 +113,12 @@ func handleExec(input []string) bool {
 }
 
 func handleDirChange(path string) bool {
-	// var err error
-	// if !filepath.IsAbs(path) {
-	// 	if path, err = filepath.Abs(path); err != nil {
-	// 		return false
-	// 	}
-	// }
+	var err error
+	if !filepath.IsAbs(path) {
+		if path, err = filepath.Abs(path); err != nil {
+			return false
+		}
+	}
 	info, err := os.Stat(path)
 	if err != nil {
 		return false
