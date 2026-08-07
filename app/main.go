@@ -20,36 +20,6 @@ type Command struct {
 	parts   []string
 }
 
-func decodeCommand(command string) (*Command, error) {
-	cmd := &Command{}
-	arr := strings.Split(command, " ")
-	if len(arr) == 0 {
-		return nil, fmt.Errorf("No command")
-	}
-	if !slices.Contains(keywords, arr[0]) {
-		for _, path := range paths {
-			full := filepath.Join(path, arr[0])
-			if checkPath(full) {
-				cmd := exec.Command(arr[0])
-				if len(arr) > 1 {
-					cmd.Args = append(cmd.Args, arr[1:]...)
-				}
-				if out, err := cmd.Output(); err != nil {
-					fmt.Print("unable to execute\n")
-					return nil, fmt.Errorf("Unexecutable")
-				} else {
-					fmt.Printf("%s\n", out)
-				}
-				return &Command{keyword: "exec"}, nil
-			}
-		}
-		return nil, fmt.Errorf("Unknown command")
-	}
-	cmd.keyword = arr[0]
-	cmd.parts = arr[1:]
-	return cmd, nil
-}
-
 func main() {
 	scan := bufio.NewReader(os.Stdin)
 	for {
@@ -66,6 +36,44 @@ func main() {
 		}
 		handleCommand(command, paths)
 	}
+}
+
+func decodeCommand(command string) (*Command, error) {
+	cmd := &Command{}
+	arr := strings.Split(command, " ")
+	if len(arr) == 0 {
+		return nil, fmt.Errorf("No command")
+	}
+	if !slices.Contains(keywords, arr[0]) {
+		if handleExec(arr) {
+			cmd.keyword = "exec"
+			return cmd, nil
+		} else {
+			return nil, fmt.Errorf("Unknown command")
+		}
+	}
+	cmd.keyword = arr[0]
+	cmd.parts = arr[1:]
+	return cmd, nil
+}
+
+func handleExec(input []string) bool {
+	for _, path := range paths {
+		full := filepath.Join(path, input[0])
+		if checkPath(full) {
+			cmd := exec.Command(input[0])
+			if len(input) > 1 {
+				cmd.Args = append(cmd.Args, input[1:]...)
+			}
+			if out, err := cmd.Output(); err != nil {
+				return false
+			} else {
+				fmt.Printf("%s\n", out)
+				break
+			}
+		}
+	}
+	return true
 }
 
 func handleCommand(command *Command, paths []string) {
@@ -96,7 +104,6 @@ func handleCommand(command *Command, paths []string) {
 	case "exit":
 		os.Exit(0)
 	case "exec":
-		fmt.Print("\n")
 		return
 	}
 }
