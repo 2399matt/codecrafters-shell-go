@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-var keywords = []string{"echo", "exit", "type", "pwd"}
+var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
 var path string = os.Getenv("PATH")
 var paths []string = strings.Split(path, ":")
 
@@ -109,7 +109,26 @@ func handleCommand(command *Command, paths []string) {
 		if wd, err := os.Getwd(); err == nil {
 			fmt.Printf("%s\n", wd)
 		}
+	case "cd":
+		if handleDirChange(command.parts[0]) {
+			return
+		} else {
+			fmt.Println("No such file or directory")
+		}
 	}
+}
+
+func handleDirChange(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	if info.IsDir() {
+		if err := os.Chdir(path); err != nil {
+			return false
+		}
+	}
+	return true
 }
 
 func checkPath(path string) bool {
