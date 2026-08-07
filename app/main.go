@@ -42,7 +42,6 @@ func main() {
 
 func decodeCommand(command string) (*Command, error) {
 	cmd := &Command{}
-	i := 0
 	parts := make([]string, 0)
 	inSingleQuote := false
 	var curr strings.Builder
@@ -98,7 +97,6 @@ func handleCommand(command *Command) {
 			}
 		}
 	case "echo":
-		//TODO Join on nothing here due to new parser?
 		fmt.Printf("%s\n", strings.Join(command.parts, " "))
 	case "exit":
 		os.Exit(0)
