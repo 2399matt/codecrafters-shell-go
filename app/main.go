@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -11,13 +12,16 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/chzyer/readline"
+	//"github.com/chzyer/readline"
+	"golang.org/x/term"
 )
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
 var path string = os.Getenv("PATH")
 var home string = os.Getenv("HOME")
 var paths []string = strings.Split(path, ":")
+var terminalOut io.Writer = TerminalWriter{os.Stdout}
+var terminalErr io.Writer = TerminalWriter{os.Stderr}
 
 type Command struct {
 	keyword string
@@ -26,31 +30,68 @@ type Command struct {
 	errOut  io.Writer
 }
 
+// Need carriage bytes if write stream is set to raw terminal
+// This or a helper that checks on each call
+type TerminalWriter struct {
+	w io.Writer
+}
+
+func (t TerminalWriter) Write(p []byte) (n int, err error) {
+	output := string(p)
+	output = strings.ReplaceAll(output, "\n", "\r\n")
+	return t.w.Write([]byte(output))
+}
+
 func main() {
-	// not trying to make an entire terminal interface, can use readLine for now.
-	// term lib if we want to go back to that
-	completions := make([]readline.PrefixCompleterInterface, 0, len(keywords))
-	for _, keyword := range keywords {
-		completions = append(completions, readline.PcItem(keyword))
-	}
-	completer := readline.NewPrefixCompleter(completions...)
-	rl, err := readline.NewEx(&readline.Config{
-		Prompt:       "$ ",
-		AutoComplete: completer,
-	})
+	old, err := term.MakeRaw(int(os.Stdout.Fd()))
 	if err != nil {
 		panic(err)
 	}
-	defer rl.Close()
+	defer term.Restore(int(os.Stdin.Fd()), old)
+	buf := bufio.NewReader(os.Stdin)
 	for {
-		input, err := rl.Readline()
-		if err != nil {
-			log.Fatalf("Error reading input: %v", err)
+		fmt.Print("$ ")
+		buf.Reset(os.Stdin)
+		var input string
+		for {
+			b, err := buf.ReadByte()
+			if err != nil {
+				log.Fatalf("Error reading from console %v", err)
+			}
+			if b == '\t' {
+				found := false
+				for _, kw := range keywords {
+					if strings.HasPrefix(kw, input) {
+						suffix := kw[len(input):]
+						input += suffix
+						fmt.Print(suffix)
+						found = true
+						break
+					}
+				}
+				if !found {
+					fmt.Printf("%c", 0x07)
+				}
+				continue
+			} else if b == 127 {
+				if len(input) > 0 {
+					input = input[:len(input)-1]
+					fmt.Print("\b \b")
+				}
+				continue
+			} else if b == '\r' || b == '\n' {
+				fmt.Print("\r\n")
+				break
+			} else {
+				input += string(b)
+				fmt.Printf("%c", b)
+				continue
+			}
 		}
-		strInput := strings.TrimSpace(input)
-		command, err := decodeCommand(strInput)
+		input = strings.TrimSpace(input)
+		command, err := decodeCommand(input)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: command not found\n", strInput)
+			fmt.Fprintf(os.Stderr, "%s: command not found\r\n", input)
 			continue
 		}
 		handleCommand(command)
@@ -106,8 +147,8 @@ func decodeCommand(command string) (*Command, error) {
 }
 
 func prepCommand(command *Command) (func(), func(), error) {
-	command.out = os.Stdout
-	command.errOut = os.Stderr
+	command.out = terminalOut
+	command.errOut = terminalErr
 	parts := make([]string, 0, len(command.parts))
 	var closeFunc func() = nil
 	var errCloseFunc func() = nil
