@@ -64,6 +64,7 @@ func main() {
 					if strings.HasPrefix(kw, input) {
 						suffix := kw[len(input):]
 						input += suffix
+						input += " "
 						fmt.Print(suffix)
 						found = true
 						break
