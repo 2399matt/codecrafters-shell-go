@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +10,8 @@ import (
 	"slices"
 	"strings"
 	"unicode"
+
+	"github.com/chzyer/readline"
 )
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
@@ -26,68 +27,25 @@ type Command struct {
 }
 
 func main() {
-	// oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer term.Restore(int(os.Stdin.Fd()), oldState)
-	// buf := make([]byte, 1)
-	// input := make([]byte, 0, 255)
-	// fmt.Print("$ ")
-	// for {
-	// 	_, err := os.Stdin.Read(buf)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// 	switch buf[0] {
-	// 	case '\t':
-	// 		// autocomplete
-	// 		prefix := string(input)
-	// 		for _, keyword := range keywords {
-	// 			if strings.HasPrefix(keyword, prefix) {
-	// 				suffix := keyword[len(prefix):]
-	// 				suffix += " "
-	// 				fmt.Print(suffix)
-	// 				input = append(input, suffix...)
-	// 				break
-	// 			}
-	// 		}
-	// 	case '\r':
-	// 		fmt.Print("\r\n")
-	// 		cmd := strings.TrimSpace(string(input))
-	// 		input = input[:0]
-	// 		command, err := decodeCommand(cmd)
-	// 		if err != nil {
-	// 			fmt.Fprintf(os.Stderr, "%s: command not found\n", cmd)
-	// 			fmt.Print("$ ")
-	// 			continue
-	// 		}
-	// 		term.Restore(int(os.Stdin.Fd()), oldState)
-	// 		handleCommand(command)
-	// 		oldState, err = term.MakeRaw(int(os.Stdin.Fd()))
-	// 		if err != nil {
-	// 			panic(err)
-	// 		}
-	// 		fmt.Print("$ ")
-	// 	case 127:
-	// 		//backspace
-	// 		if len(input) > 0 {
-	// 			input = input[:len(input)-1]
-	// 			fmt.Print("\b \b")
-	// 		}
-	// 	default:
-	// 		input = append(input, buf[0])
-	// 		fmt.Printf("%c", buf[0])
-	// 	}
-	// }
-	scan := bufio.NewReader(os.Stdin)
+	completions := make([]readline.PrefixCompleterInterface, 0, len(keywords))
+	for _, keyword := range keywords {
+		completions = append(completions, readline.PcItem(keyword))
+	}
+	completer := readline.NewPrefixCompleter(completions...)
+	rl, err := readline.NewEx(&readline.Config{
+		Prompt:       "$ ",
+		AutoComplete: completer,
+	})
+	if err != nil {
+		panic(err)
+	}
+	defer rl.Close()
 	for {
-		fmt.Print("$ ")
-		input, err := scan.ReadBytes('\n')
+		input, err := rl.Readline()
 		if err != nil {
 			log.Fatalf("Error reading input: %v", err)
 		}
-		strInput := strings.TrimSpace(string(input[:len(input)-1]))
+		strInput := strings.TrimSpace(input)
 		command, err := decodeCommand(strInput)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: command not found\n", strInput)
