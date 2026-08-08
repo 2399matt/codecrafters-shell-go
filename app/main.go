@@ -101,7 +101,7 @@ func decodeCommand(command string) (*Command, error) {
 func prepCommand(command *Command) (func(), error) {
 	command.out = os.Stdout
 	parts := make([]string, len(command.parts))
-	var closeFunc func()
+	var closeFunc func() = nil
 	for i := 0; i < len(parts); i++ {
 		part := command.parts[i]
 		if part == ">" || part == "1>" {
@@ -111,8 +111,7 @@ func prepCommand(command *Command) (func(), error) {
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
-				return nil, err
+				return nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
 			}
 			command.out = file
 			closeFunc = func() { file.Close() }
@@ -128,6 +127,7 @@ func prepCommand(command *Command) (func(), error) {
 func handleCommand(command *Command) {
 	closer, err := prepCommand(command)
 	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
 		return
 	}
 	if closer != nil {
@@ -149,7 +149,7 @@ func handleCommand(command *Command) {
 			}
 		}
 	case "echo":
-		fmt.Printf("%s\n", strings.Join(command.parts, " "))
+		fmt.Fprintf(command.out, "%s\n", strings.Join(command.parts, " "))
 	case "exit":
 		os.Exit(0)
 	case "exec":
