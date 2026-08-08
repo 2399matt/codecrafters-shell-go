@@ -73,12 +73,14 @@ func main() {
 				if matches == 0 {
 					multipleFiles = false
 					fmt.Printf("%c", 0x07)
+					continue
 				} else if matches == 1 {
 					multipleFiles = false
 					suffix := fileResults[0][len(input):]
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
+					continue
 				} else if multipleFiles {
 					fmt.Printf("\r\n")
 					fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
