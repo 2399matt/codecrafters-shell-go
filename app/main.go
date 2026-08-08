@@ -59,23 +59,23 @@ func main() {
 				log.Fatalf("Error reading from console %v", err)
 			}
 			if b == '\t' {
-				found := false
-				for _, kw := range keywords {
-					if strings.HasPrefix(kw, input) {
-						suffix := kw[len(input):]
-						input += suffix
-						input += " "
-						fmt.Printf("%s ", suffix)
-						found = true
-						break
-					}
-				}
-				if !found {
+				if keyword, ok := searchKeyword(input); ok {
+					suffix := keyword[len(input):]
+					input += suffix
+					input += " "
+					fmt.Printf("%s ", suffix)
+				} else if file, ok := searchForFileMatch(input); ok {
+					suffix := file[len(input):]
+					input += suffix
+					input += " "
+					fmt.Printf("%s ", suffix)
+				} else {
 					fmt.Printf("%c", 0x07)
 				}
 				continue
 			} else if b == 127 {
 				if len(input) > 0 {
+					// assuming 1-byte?
 					input = input[:len(input)-1]
 					fmt.Print("\b \b")
 				}
@@ -325,6 +325,42 @@ func handleTypeSearch(command *Command) bool {
 		}
 	}
 	return false
+}
+
+func searchKeyword(prefix string) (string, bool) {
+	for _, kw := range keywords {
+		if strings.HasPrefix(kw, prefix) {
+			return kw, true
+		}
+	}
+	return "", false
+}
+
+func searchForFileMatch(prefix string) (string, bool) {
+	for _, path := range paths {
+		files, err := os.ReadDir(path)
+		if err != nil {
+			continue
+		}
+		for _, file := range files {
+			if !file.IsDir() {
+				if strings.HasPrefix(file.Name(), prefix) {
+					info, err := file.Info()
+					if err != nil {
+						continue
+					}
+					if info.Mode().Perm()&0o111 != 0 {
+						if idx := strings.LastIndex(info.Name(), "."); idx != -1 {
+							return info.Name()[:idx], true
+						} else {
+							return info.Name(), true
+						}
+					}
+				}
+			}
+		}
+	}
+	return "", false
 }
 
 func checkPath(path string) bool {
