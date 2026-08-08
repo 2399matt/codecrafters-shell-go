@@ -343,20 +343,15 @@ func searchForFileMatch(prefix string) (string, bool) {
 			continue
 		}
 		for _, file := range files {
-			if !file.IsDir() {
-				if strings.HasPrefix(file.Name(), prefix) {
-					info, err := file.Info()
-					if err != nil {
-						continue
-					}
-					if info.Mode().Perm()&0o111 != 0 {
-						if idx := strings.LastIndex(info.Name(), "."); idx != -1 {
-							return info.Name()[:idx], true
-						} else {
-							return info.Name(), true
-						}
-					}
-				}
+			if file.IsDir() || !strings.HasPrefix(file.Name(), prefix) {
+				continue
+			}
+			info, err := file.Info()
+			if err != nil {
+				continue
+			}
+			if info.Mode().Perm()&0o111 != 0 {
+				return file.Name(), true
 			}
 		}
 	}
