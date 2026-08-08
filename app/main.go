@@ -105,7 +105,10 @@ func prepCommand(command *Command) (func(), error) {
 	for i := 0; i < len(parts); i++ {
 		part := command.parts[i]
 		if part == ">" || part == "1>" {
-			path := filepath.Join(path, command.parts[i+1])
+			if i >= len(parts)-1 {
+				fmt.Fprintln(os.Stderr, "No specified file")
+			}
+			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
