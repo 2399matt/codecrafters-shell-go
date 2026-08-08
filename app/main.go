@@ -100,7 +100,7 @@ func decodeCommand(command string) (*Command, error) {
 
 func prepCommand(command *Command) (func(), error) {
 	command.out = os.Stdout
-	parts := make([]string, len(command.parts))
+	parts := make([]string, 0, len(command.parts))
 	var closeFunc func() = nil
 	for i := 0; i < len(command.parts); i++ {
 		part := command.parts[i]
@@ -167,7 +167,7 @@ func handleCommand(command *Command) {
 			if handleExec(command) {
 				return
 			} else {
-				fmt.Fprintf(os.Stderr, "%s: command not found", command.keyword)
+				fmt.Fprintf(os.Stderr, "%s: command not found\n", command.keyword)
 			}
 		}
 	}
