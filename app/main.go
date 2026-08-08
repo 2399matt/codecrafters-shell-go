@@ -180,8 +180,9 @@ func handleExec(command *Command) bool {
 			cmd := exec.Command(command.keyword)
 			cmd.Args = append(cmd.Args, command.parts...)
 			cmd.Stdout = command.out
+			cmd.Stderr = os.Stderr
 			if err := cmd.Run(); err != nil {
-				return false
+				return true
 			} else {
 				return true
 			}
