@@ -95,11 +95,11 @@ func decodeCommand(command string) (*Command, error) {
 	}
 	cmd.keyword = parts[0]
 	cmd.parts = parts[1:]
+	cmd.out = os.Stdout
 	return cmd, nil
 }
 
 func prepCommand(command *Command) (func(), error) {
-	command.out = os.Stdout
 	parts := make([]string, len(command.parts))
 	var closeFunc func() = nil
 	for i := 0; i < len(parts); i++ {
