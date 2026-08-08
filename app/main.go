@@ -181,10 +181,10 @@ func handleExec(command *Command) bool {
 			if len(command.parts) > 1 {
 				cmd.Args = append(cmd.Args, command.parts...)
 			}
-			if out, err := cmd.Output(); err != nil {
+			cmd.Stdout = command.out
+			if err := cmd.Run(); err != nil {
 				return false
 			} else {
-				fmt.Fprintf(command.out, "%s", out)
 				return true
 			}
 		}
