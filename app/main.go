@@ -64,6 +64,7 @@ func main() {
 					if strings.HasPrefix(kw, input) {
 						suffix := kw[len(input):]
 						input += suffix
+						input += " "
 						fmt.Printf("%s ", suffix)
 						found = true
 						break
@@ -88,7 +89,7 @@ func main() {
 				continue
 			}
 		}
-		input = strings.TrimSpace(input)
+		//input = strings.TrimSpace(input)
 		command, err := decodeCommand(input)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s: command not found\r\n", input)
