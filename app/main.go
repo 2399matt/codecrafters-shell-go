@@ -53,7 +53,7 @@ func main() {
 		fmt.Print("$ ")
 		buf.Reset(os.Stdin)
 		var input string
-		var printFiles bool = true
+		var multipleFiles bool = false
 		fileResults := make([]string, 0)
 		for {
 			b, err := buf.ReadByte()
@@ -61,22 +61,42 @@ func main() {
 				log.Fatalf("Error reading from console %v", err)
 			}
 			if b == '\t' {
-				printFiles = !printFiles
 				if keyword, ok := searchKeyword(input); ok {
 					suffix := keyword[len(input):]
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
-				} else if !printFiles {
-					fileResults = append(fileResults, searchForFileMatch(input)...)
+					continue
+				}
+				fileResults = searchForFileMatch(input)
+				matches := len(fileResults)
+				if matches == 0 {
 					fmt.Printf("%c", 0x07)
-				} else if printFiles && len(fileResults) > 0 {
+					multipleFiles = false
+					continue
+				} else if matches == 1 {
+					suffix := fileResults[0][len(input):]
+					input += suffix
+					input += " "
+					fmt.Printf("%s ", suffix)
+				} else if multipleFiles {
 					fmt.Printf("\r\n")
 					fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
 					fmt.Printf("$ %s", input)
 				} else {
 					fmt.Printf("%c", 0x07)
+					multipleFiles = true
 				}
+				// else if !printFiles {
+				// 	fileResults = append(fileResults, searchForFileMatch(input)...)
+				// 	fmt.Printf("%c", 0x07)
+				// } else if printFiles && len(fileResults) > 0 {
+				// 	fmt.Printf("\r\n")
+				// 	fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
+				// 	fmt.Printf("$ %s", input)
+				// } else {
+				// 	fmt.Printf("%c", 0x07)
+				// }
 				continue
 			} else if b == 127 {
 				if len(input) > 0 {
