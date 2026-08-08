@@ -53,22 +53,27 @@ func main() {
 		fmt.Print("$ ")
 		buf.Reset(os.Stdin)
 		var input string
+		var printFiles bool = true
+		fileResults := make([]string, 0)
 		for {
 			b, err := buf.ReadByte()
 			if err != nil {
 				log.Fatalf("Error reading from console %v", err)
 			}
 			if b == '\t' {
+				printFiles = !printFiles
 				if keyword, ok := searchKeyword(input); ok {
 					suffix := keyword[len(input):]
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
-				} else if file, ok := searchForFileMatch(input); ok {
-					suffix := file[len(input):]
-					input += suffix
-					input += " "
-					fmt.Printf("%s ", suffix)
+				} else if !printFiles {
+					fileResults = append(fileResults, searchForFileMatch(input)...)
+				} else if printFiles && len(fileResults) > 0 {
+					fmt.Printf("\r\n")
+					for _, file := range fileResults {
+						fmt.Printf("%s ", file)
+					}
 				} else {
 					fmt.Printf("%c", 0x07)
 				}
@@ -336,7 +341,8 @@ func searchKeyword(prefix string) (string, bool) {
 	return "", false
 }
 
-func searchForFileMatch(prefix string) (string, bool) {
+func searchForFileMatch(prefix string) []string {
+	results := make([]string, 0)
 	for _, path := range paths {
 		files, err := os.ReadDir(path)
 		if err != nil {
@@ -351,11 +357,11 @@ func searchForFileMatch(prefix string) (string, bool) {
 				continue
 			}
 			if info.Mode().Perm()&0o111 != 0 {
-				return file.Name(), true
+				results = append(results, file.Name())
 			}
 		}
 	}
-	return "", false
+	return results
 }
 
 func checkPath(path string) bool {
