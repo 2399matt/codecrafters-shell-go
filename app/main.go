@@ -73,7 +73,7 @@ func main() {
 				} else if printFiles && len(fileResults) > 0 {
 					fmt.Printf("\r\n")
 					for _, file := range fileResults {
-						fmt.Printf("%s ", file)
+						fmt.Printf("%s", file)
 					}
 				} else {
 					fmt.Printf("%c", 0x07)
