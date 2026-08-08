@@ -22,6 +22,7 @@ type Command struct {
 	keyword string
 	parts   []string
 	out     io.Writer
+	errOut  io.Writer
 }
 
 func main() {
@@ -85,33 +86,41 @@ func decodeCommand(command string) (*Command, error) {
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("No command")
 	}
-	// if !slices.Contains(keywords, parts[0]) {
-	// 	if handleExec(parts) {
-	// 		cmd.keyword = "exec"
-	// 		return cmd, nil
-	// 	} else {
-	// 		return nil, fmt.Errorf("Unknown command")
-	// 	}
-	// }
 	cmd.keyword = parts[0]
 	cmd.parts = parts[1:]
 	return cmd, nil
 }
 
-func prepCommand(command *Command) (func(), error) {
+func prepCommand(command *Command) (func(), func(), error) {
 	command.out = os.Stdout
+	command.errOut = os.Stderr
 	parts := make([]string, 0, len(command.parts))
 	var closeFunc func() = nil
+	var errCloseFunc func() = nil
 	for i := 0; i < len(command.parts); i++ {
 		part := command.parts[i]
-		if part == ">" || part == "1>" {
+		if part == "2>" {
 			if i >= len(command.parts)-1 {
-				fmt.Fprintln(os.Stderr, "No specified file")
+				fmt.Fprintln(command.errOut, "No specified file")
 			}
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
-				return nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+			}
+			command.errOut = file
+			errCloseFunc = func() { file.Close() }
+			i++
+			continue
+		}
+		if part == ">" || part == "1>" {
+			if i >= len(command.parts)-1 {
+				fmt.Fprintln(command.errOut, "No specified file")
+			}
+			path := command.parts[i+1]
+			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			if err != nil {
+				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
 			}
 			command.out = file
 			closeFunc = func() { file.Close() }
@@ -121,17 +130,20 @@ func prepCommand(command *Command) (func(), error) {
 		parts = append(parts, command.parts[i])
 	}
 	command.parts = parts
-	return closeFunc, nil
+	return closeFunc, errCloseFunc, nil
 }
 
 func handleCommand(command *Command) {
-	closer, err := prepCommand(command)
+	closer, errCloser, err := prepCommand(command)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
+		fmt.Fprintln(command.errOut, err.Error())
 		return
 	}
 	if closer != nil {
 		defer closer()
+	}
+	if errCloser != nil {
+		defer errCloser()
 	}
 	switch command.keyword {
 	case "type":
@@ -145,7 +157,7 @@ func handleCommand(command *Command) {
 			if handleTypeSearch(command) {
 				return
 			} else {
-				fmt.Fprintf(os.Stderr, "%s not found\n", command.parts[0])
+				fmt.Fprintf(command.errOut, "%s not found\n", command.parts[0])
 			}
 		}
 	case "echo":
@@ -160,14 +172,14 @@ func handleCommand(command *Command) {
 		if handleDirChange(command.parts[0]) {
 			return
 		} else {
-			fmt.Fprintf(os.Stderr, "%s: %s: No such file or directory\n", command.keyword, command.parts[0])
+			fmt.Fprintf(command.errOut, "%s: %s: No such file or directory\n", command.keyword, command.parts[0])
 		}
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if handleExec(command) {
 				return
 			} else {
-				fmt.Fprintf(os.Stderr, "%s: command not found\n", command.keyword)
+				fmt.Fprintf(command.errOut, "%s: command not found\n", command.keyword)
 			}
 		}
 	}
