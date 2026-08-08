@@ -102,10 +102,10 @@ func prepCommand(command *Command) (func(), error) {
 	command.out = os.Stdout
 	parts := make([]string, len(command.parts))
 	var closeFunc func() = nil
-	for i := 0; i < len(parts); i++ {
+	for i := 0; i < len(command.parts); i++ {
 		part := command.parts[i]
 		if part == ">" || part == "1>" {
-			if i >= len(parts)-1 {
+			if i >= len(command.parts)-1 {
 				fmt.Fprintln(os.Stderr, "No specified file")
 			}
 			path := command.parts[i+1]
