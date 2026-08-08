@@ -27,6 +27,8 @@ type Command struct {
 }
 
 func main() {
+	// not trying to make an entire terminal interface, can use readLine for now.
+	// term lib if we want to go back to that
 	completions := make([]readline.PrefixCompleterInterface, 0, len(keywords))
 	for _, keyword := range keywords {
 		completions = append(completions, readline.PcItem(keyword))
