@@ -83,7 +83,6 @@ func main() {
 					fmt.Printf("\r\n")
 					fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
 					fmt.Printf("$ %s", input)
-					multipleFiles = false
 				} else {
 					fmt.Printf("%c", 0x07)
 					multipleFiles = true
