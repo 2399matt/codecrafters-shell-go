@@ -178,9 +178,7 @@ func handleExec(command *Command) bool {
 		full := filepath.Join(path, command.keyword)
 		if checkPath(full) {
 			cmd := exec.Command(command.keyword)
-			if len(command.parts) > 1 {
-				cmd.Args = append(cmd.Args, command.parts...)
-			}
+			cmd.Args = append(cmd.Args, command.parts...)
 			cmd.Stdout = command.out
 			if err := cmd.Run(); err != nil {
 				return false
