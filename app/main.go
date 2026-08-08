@@ -69,6 +69,7 @@ func main() {
 					fmt.Printf("%s ", suffix)
 				} else if !printFiles {
 					fileResults = append(fileResults, searchForFileMatch(input)...)
+					fmt.Printf("%c", 0x07)
 				} else if printFiles && len(fileResults) > 0 {
 					fmt.Printf("\r\n")
 					for _, file := range fileResults {
