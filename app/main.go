@@ -46,6 +46,7 @@ func main() {
 			for _, keyword := range keywords {
 				if strings.HasPrefix(keyword, prefix) {
 					suffix := keyword[len(prefix):]
+					suffix += " "
 					fmt.Print(suffix)
 					input = append(input, suffix...)
 					break
