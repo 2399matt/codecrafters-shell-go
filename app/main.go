@@ -1,16 +1,16 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
 	"unicode"
+
+	term "golang.org/x/term"
 )
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
@@ -26,21 +26,73 @@ type Command struct {
 }
 
 func main() {
-	scan := bufio.NewReader(os.Stdin)
-	for {
-		fmt.Print("$ ")
-		input, err := scan.ReadBytes('\n')
-		if err != nil {
-			log.Fatalf("Error reading input: %v", err)
-		}
-		strInput := strings.TrimSpace(string(input[:len(input)-1]))
-		command, err := decodeCommand(strInput)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: command not found\n", strInput)
-			continue
-		}
-		handleCommand(command)
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		panic(err)
 	}
+	defer term.Restore(int(os.Stdin.Fd()), oldState)
+	buf := make([]byte, 1)
+	input := make([]byte, 0, 255)
+	fmt.Print("$ ")
+	for {
+		_, err := os.Stdin.Read(buf)
+		if err != nil {
+			panic(err)
+		}
+		switch buf[0] {
+		case '\t':
+			// autocomplete
+			prefix := string(input)
+			for _, keyword := range keywords {
+				if strings.HasPrefix(keyword, prefix) {
+					suffix := keyword[len(prefix):]
+					fmt.Print(suffix)
+					input = append(input, suffix...)
+					break
+				}
+			}
+		case '\r':
+			fmt.Print("\r\n")
+			cmd := strings.TrimSpace(string(input))
+			command, err := decodeCommand(cmd)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: command not found\n", cmd)
+				fmt.Print("\b\b\b\b")
+				continue
+			}
+			handleCommand(command)
+			for range len(input) {
+				fmt.Print("\b")
+			}
+			input = input[:0]
+			fmt.Print("$ ")
+			// enter (done) - process input string
+		case 127:
+			//backspace
+			if len(input) > 0 {
+				input = input[:len(input)-1]
+				fmt.Print("\b \b")
+			}
+		default:
+			input = append(input, buf[0])
+			fmt.Printf("%c", buf[0])
+		}
+	}
+	// scan := bufio.NewReader(os.Stdin)
+	// for {
+	// 	fmt.Print("$ ")
+	// 	input, err := scan.ReadBytes('\n')
+	// 	if err != nil {
+	// 		log.Fatalf("Error reading input: %v", err)
+	// 	}
+	// 	strInput := strings.TrimSpace(string(input[:len(input)-1]))
+	// 	command, err := decodeCommand(strInput)
+	// 	if err != nil {
+	// 		fmt.Fprintf(os.Stderr, "%s: command not found\n", strInput)
+	// 		continue
+	// 	}
+	// 	handleCommand(command)
+	// }
 }
 
 func decodeCommand(command string) (*Command, error) {
