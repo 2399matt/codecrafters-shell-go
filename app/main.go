@@ -360,6 +360,7 @@ func searchForFileMatch(prefix string) []string {
 			}
 		}
 	}
+	slices.Sort(results)
 	return results
 }
 
