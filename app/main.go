@@ -55,19 +55,15 @@ func main() {
 		case '\r':
 			fmt.Print("\r\n")
 			cmd := strings.TrimSpace(string(input))
+			input = input[:0]
 			command, err := decodeCommand(cmd)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "%s: command not found\n", cmd)
-				fmt.Print("\b\b\b\b")
+				fmt.Print("$ ")
 				continue
 			}
 			handleCommand(command)
-			for range len(input) {
-				fmt.Print("\b")
-			}
-			input = input[:0]
 			fmt.Print("$ ")
-			// enter (done) - process input string
 		case 127:
 			//backspace
 			if len(input) > 0 {
@@ -155,6 +151,7 @@ func prepCommand(command *Command) (func(), func(), error) {
 		if part == "2>>" {
 			if i >= len(command.parts)-1 {
 				fmt.Fprintln(command.errOut, "No specified file")
+				return nil, nil, nil
 			}
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -169,6 +166,7 @@ func prepCommand(command *Command) (func(), func(), error) {
 		if part == "2>" {
 			if i >= len(command.parts)-1 {
 				fmt.Fprintln(command.errOut, "No specified file")
+				return nil, nil, nil
 			}
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
@@ -183,6 +181,7 @@ func prepCommand(command *Command) (func(), func(), error) {
 		if part == ">>" || part == "1>>" {
 			if i >= len(command.parts)-1 {
 				fmt.Fprintln(command.errOut, "No specified file")
+				return nil, nil, nil
 			}
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -197,6 +196,7 @@ func prepCommand(command *Command) (func(), func(), error) {
 		if part == ">" || part == "1>" {
 			if i >= len(command.parts)-1 {
 				fmt.Fprintln(command.errOut, "No specified file")
+				return nil, nil, nil
 			}
 			path := command.parts[i+1]
 			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
