@@ -118,7 +118,7 @@ func prepCommand(command *Command) (func(), func(), error) {
 				fmt.Fprintln(command.errOut, "No specified file")
 			}
 			path := command.parts[i+1]
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND, 0644)
+			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 			if err != nil {
 				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
 			}
