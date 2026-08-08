@@ -62,7 +62,12 @@ func main() {
 				fmt.Print("$ ")
 				continue
 			}
+			term.Restore(int(os.Stdin.Fd()), oldState)
 			handleCommand(command)
+			oldState, err = term.MakeRaw(int(os.Stdin.Fd()))
+			if err != nil {
+				panic(err)
+			}
 			fmt.Print("$ ")
 		case 127:
 			//backspace
