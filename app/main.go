@@ -85,14 +85,14 @@ func decodeCommand(command string) (*Command, error) {
 	if len(parts) == 0 {
 		return nil, fmt.Errorf("No command")
 	}
-	if !slices.Contains(keywords, parts[0]) {
-		if handleExec(parts) {
-			cmd.keyword = "exec"
-			return cmd, nil
-		} else {
-			return nil, fmt.Errorf("Unknown command")
-		}
-	}
+	// if !slices.Contains(keywords, parts[0]) {
+	// 	if handleExec(parts) {
+	// 		cmd.keyword = "exec"
+	// 		return cmd, nil
+	// 	} else {
+	// 		return nil, fmt.Errorf("Unknown command")
+	// 	}
+	// }
 	cmd.keyword = parts[0]
 	cmd.parts = parts[1:]
 	return cmd, nil
@@ -152,8 +152,6 @@ func handleCommand(command *Command) {
 		fmt.Fprintf(command.out, "%s\n", strings.Join(command.parts, " "))
 	case "exit":
 		os.Exit(0)
-	case "exec":
-		return
 	case "pwd":
 		if wd, err := os.Getwd(); err == nil {
 			fmt.Fprintf(command.out, "%s\n", wd)
@@ -164,21 +162,29 @@ func handleCommand(command *Command) {
 		} else {
 			fmt.Fprintf(os.Stderr, "%s: %s: No such file or directory\n", command.keyword, command.parts[0])
 		}
+	default:
+		if !slices.Contains(keywords, command.keyword) {
+			if handleExec(command) {
+				return
+			} else {
+				fmt.Fprintf(os.Stderr, "%s: command not found", command.keyword)
+			}
+		}
 	}
 }
 
-func handleExec(input []string) bool {
+func handleExec(command *Command) bool {
 	for _, path := range paths {
-		full := filepath.Join(path, input[0])
+		full := filepath.Join(path, command.keyword)
 		if checkPath(full) {
-			cmd := exec.Command(input[0])
-			if len(input) > 1 {
-				cmd.Args = append(cmd.Args, input[1:]...)
+			cmd := exec.Command(command.keyword)
+			if len(command.parts) > 1 {
+				cmd.Args = append(cmd.Args, command.parts[1:]...)
 			}
 			if out, err := cmd.Output(); err != nil {
 				return false
 			} else {
-				fmt.Printf("%s", out)
+				fmt.Fprintf(command.out, "%s", out)
 				return true
 			}
 		}
