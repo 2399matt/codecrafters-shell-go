@@ -71,10 +71,10 @@ func main() {
 				fileResults = searchForFileMatch(input)
 				matches := len(fileResults)
 				if matches == 0 {
-					fmt.Printf("%c", 0x07)
 					multipleFiles = false
-					continue
+					fmt.Printf("%c", 0x07)
 				} else if matches == 1 {
+					multipleFiles = false
 					suffix := fileResults[0][len(input):]
 					input += suffix
 					input += " "
@@ -83,20 +83,11 @@ func main() {
 					fmt.Printf("\r\n")
 					fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
 					fmt.Printf("$ %s", input)
+					multipleFiles = false
 				} else {
 					fmt.Printf("%c", 0x07)
 					multipleFiles = true
 				}
-				// else if !printFiles {
-				// 	fileResults = append(fileResults, searchForFileMatch(input)...)
-				// 	fmt.Printf("%c", 0x07)
-				// } else if printFiles && len(fileResults) > 0 {
-				// 	fmt.Printf("\r\n")
-				// 	fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
-				// 	fmt.Printf("$ %s", input)
-				// } else {
-				// 	fmt.Printf("%c", 0x07)
-				// }
 				continue
 			} else if b == 127 {
 				if len(input) > 0 {
