@@ -179,7 +179,7 @@ func handleExec(command *Command) bool {
 		if checkPath(full) {
 			cmd := exec.Command(command.keyword)
 			if len(command.parts) > 1 {
-				cmd.Args = append(cmd.Args, command.parts[1:]...)
+				cmd.Args = append(cmd.Args, command.parts...)
 			}
 			if out, err := cmd.Output(); err != nil {
 				return false
