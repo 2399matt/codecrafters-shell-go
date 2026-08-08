@@ -35,7 +35,7 @@ func main() {
 		strInput := strings.TrimSpace(string(input[:len(input)-1]))
 		command, err := decodeCommand(strInput)
 		if err != nil {
-			fmt.Fprintf(command.out, "%s: command not found\n", strInput)
+			fmt.Fprintf(os.Stderr, "%s: command not found\n", strInput)
 			continue
 		}
 		handleCommand(command)
@@ -95,11 +95,11 @@ func decodeCommand(command string) (*Command, error) {
 	}
 	cmd.keyword = parts[0]
 	cmd.parts = parts[1:]
-	cmd.out = os.Stdout
 	return cmd, nil
 }
 
 func prepCommand(command *Command) (func(), error) {
+	command.out = os.Stdout
 	parts := make([]string, len(command.parts))
 	var closeFunc func() = nil
 	for i := 0; i < len(parts); i++ {
