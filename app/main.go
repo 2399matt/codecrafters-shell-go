@@ -74,6 +74,9 @@ func main() {
 				parts := strings.Split(input, " ")
 				if len(parts) > 1 {
 					toMatch = parts[len(parts)-1]
+					fileResults = searchWorkingDir(toMatch)
+				} else {
+					fileResults = searchForFileMatch(toMatch)
 				}
 				matches := len(fileResults)
 				if matches == 0 {
