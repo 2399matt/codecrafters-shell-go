@@ -85,7 +85,7 @@ func main() {
 					fmt.Printf("%c", 0x07)
 				} else if matches == 1 {
 					multipleFiles = false
-					suffix := fileResults[0][len(input):]
+					suffix := fileResults[0][len(toMatch):]
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
