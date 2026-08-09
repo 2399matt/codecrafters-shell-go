@@ -166,7 +166,7 @@ func searchForPath(path, prefix string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	if prefix == "" && len(files) == 1 {
+	if prefix == "" || len(files) == 1 {
 		return files[0].Name(), files[0].IsDir()
 	}
 	for _, file := range files {
