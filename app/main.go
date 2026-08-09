@@ -89,6 +89,7 @@ func main() {
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
+					isFirstWord = false
 				} else {
 					lcp := longestCommonPrefix(fileResults)
 
@@ -401,26 +402,23 @@ func searchKeyword(prefix string) (string, bool) {
 	return "", false
 }
 
+func searchWorkingDir(prefix string) []string {
+	results := make([]string, 0)
+	files, err := os.ReadDir("./")
+	if err != nil {
+		return results
+	}
+	for _, file := range files {
+		if file.IsDir() || !strings.HasPrefix(file.Name(), prefix) {
+			continue
+		}
+		results = append(results, file.Name())
+	}
+	slices.Sort(results)
+	return results
+}
+
 func searchForFileMatch(prefix string) []string {
-	// results := make([]string, 0)
-	// files, err := os.ReadDir("./")
-	// if err != nil {
-	// 	return results
-	// }
-	// for _, file := range files {
-	// 	if file.IsDir() || !strings.HasPrefix(file.Name(), prefix) {
-	// 		continue
-	// 	}
-	// 	info, err := file.Info()
-	// 	if err != nil {
-	// 		continue
-	// 	}
-	// 	if info.Mode().Perm()&0o111 != 0 {
-	// 		results = append(results, file.Name())
-	// 	}
-	// }
-	// slices.Sort(results)
-	// return results
 	results := make([]string, 0)
 	for _, path := range paths {
 		files, err := os.ReadDir(path)
