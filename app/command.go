@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -24,9 +25,11 @@ type TerminalWriter struct {
 }
 
 func (t TerminalWriter) Write(p []byte) (n int, err error) {
-	output := string(p)
-	output = strings.ReplaceAll(output, "\n", "\r\n")
-	return t.w.Write([]byte(output))
+	output := bytes.ReplaceAll(p, []byte("\n"), []byte("\r\n"))
+	if _, err := t.w.Write([]byte(output)); err != nil {
+		return 0, err
+	}
+	return len(p), nil
 }
 
 func (command *Command) prepCommand() (func(), func(), error) {

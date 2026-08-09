@@ -50,7 +50,6 @@ func autocomplete(input string, multiple bool) TabResult {
 		return TabResult{action: SingleMatch, suffix: fileName[len(target):], awaitingSuggestions: false, addSpace: true}
 	}
 	matches := make([]string, 0)
-	target = input
 	if len(parts) > 1 {
 		target = parts[len(parts)-1]
 		matches = searchWorkingDir(target)
