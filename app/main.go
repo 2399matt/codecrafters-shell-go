@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 	"unicode"
 
@@ -73,21 +74,34 @@ func main() {
 				if matches == 0 {
 					multipleFiles = false
 					fmt.Printf("%c", 0x07)
-					continue
 				} else if matches == 1 {
 					multipleFiles = false
 					suffix := fileResults[0][len(input):]
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
-					continue
-				} else if multipleFiles {
-					fmt.Printf("\r\n")
-					fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
-					fmt.Printf("$ %s", input)
 				} else {
-					fmt.Printf("%c", 0x07)
-					multipleFiles = true
+					lcp := longestCommonPrefix(fileResults)
+
+					if len(lcp) > len(input) {
+						// Multiple matches, but we can still autocomplete.
+						suffix := lcp[len(input):]
+						input += suffix
+						fmt.Print(suffix)
+
+						// We aren't waiting for another tab yet.
+						multipleFiles = false
+					} else if multipleFiles {
+						// LCP == input, so the second Tab lists the possibilities.
+						fmt.Printf("\r\n")
+						fmt.Printf("%s\r\n", strings.Join(fileResults, " "))
+						fmt.Printf("$ %s", input)
+						multipleFiles = false
+					} else {
+						// LCP == input, first Tab: bell.
+						fmt.Printf("%c", 0x07)
+						multipleFiles = true
+					}
 				}
 				continue
 			} else if b == 127 {
@@ -342,6 +356,31 @@ func handleTypeSearch(command *Command) bool {
 		}
 	}
 	return false
+}
+
+func longestCommonPrefix(files []string) string {
+	copied := make([]string, len(files))
+	copy(copied, files)
+	sort.Slice(copied, func(i, j int) bool {
+		return len(copied[i]) < len(copied[j])
+	})
+	shortest := copied[0]
+	res := ""
+	for _, str := range files {
+		if len(str) < len(shortest) {
+			shortest = str
+		}
+	}
+	for i := 0; i < len(shortest); i++ {
+		ch := shortest[i]
+		for _, str := range files {
+			if i < len(str) && str[i] != ch {
+				return res
+			}
+		}
+		res += string(ch)
+	}
+	return res
 }
 
 func searchKeyword(prefix string) (string, bool) {
