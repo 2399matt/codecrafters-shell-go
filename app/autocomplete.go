@@ -35,7 +35,7 @@ func autocomplete(input string, multiple bool) TabResult {
 	}
 	parts := strings.Split(input, " ")
 	target := parts[len(parts)-1]
-	path := "."
+	path := "./"
 	if idx := strings.LastIndex(target, "/"); idx != -1 {
 		target = target[idx+1:]
 		path = target[:min(len(target), idx)]
