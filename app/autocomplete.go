@@ -38,7 +38,7 @@ func autocomplete(input string, multiple bool) TabResult {
 	path := "."
 	if idx := strings.LastIndex(target, "/"); idx != -1 {
 		target = target[idx+1:]
-		path = target[:idx]
+		path = target[:min(len(target), idx)]
 	}
 	fileName, isDir := searchForPath(path, target)
 	if fileName != "" {
