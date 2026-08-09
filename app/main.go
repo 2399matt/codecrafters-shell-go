@@ -92,9 +92,9 @@ func main() {
 				} else {
 					lcp := longestCommonPrefix(fileResults)
 
-					if len(lcp) > len(input) {
+					if len(lcp) > len(toMatch) {
 						// Multiple matches, but we can still autocomplete.
-						suffix := lcp[len(input):]
+						suffix := lcp[len(toMatch):]
 						input += suffix
 						fmt.Print(suffix)
 
