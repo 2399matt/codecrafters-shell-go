@@ -64,10 +64,8 @@ func main() {
 			if b == '\t' {
 				if keyword, ok := searchKeyword(input); ok {
 					suffix := keyword[len(input):]
-					input += suffix
-					input += " "
+					input = updateLastToken(input, suffix, true)
 					fmt.Printf("%s ", suffix)
-
 					continue
 				}
 				toMatch := input
@@ -85,8 +83,7 @@ func main() {
 				} else if matches == 1 {
 					multipleFiles = false
 					suffix := fileResults[0][len(toMatch):]
-					input += suffix
-					input += " "
+					input = updateLastToken(input, suffix, true)
 					fmt.Printf("%s ", suffix)
 				} else {
 					lcp := longestCommonPrefix(fileResults)
@@ -94,7 +91,7 @@ func main() {
 					if len(lcp) > len(toMatch) {
 						// Multiple matches, but we can still autocomplete.
 						suffix := lcp[len(toMatch):]
-						input += suffix
+						input = updateLastToken(input, suffix, false)
 						fmt.Print(suffix)
 
 						// We aren't waiting for another tab yet.
@@ -389,6 +386,19 @@ func longestCommonPrefix(files []string) string {
 		res += string(ch)
 	}
 	return res
+}
+
+func updateLastToken(currentInput string, added string, addSpace bool) string {
+	parts := strings.Split(currentInput, " ")
+	if len(parts) == 0 {
+		parts = []string{""}
+	}
+	parts[len(parts)-1] += added
+	joined := strings.Join(parts, " ")
+	if addSpace && !strings.HasSuffix(joined, " ") {
+		joined += " "
+	}
+	return joined
 }
 
 func searchKeyword(prefix string) (string, bool) {
