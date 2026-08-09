@@ -43,14 +43,18 @@ func main() {
 				case NoMatch:
 					fmt.Printf("%c", 0x07)
 				case SingleMatch:
-					input = updateLastToken(input, result.suffix, true)
-					fmt.Printf("%s ", result.suffix)
+					input = updateLastToken(input, result.suffix, result.addSpace)
+					if result.addSpace {
+						fmt.Printf("%s ", result.suffix)
+					} else {
+						fmt.Printf("%s", result.suffix)
+					}
 				case ShowSuggestions:
 					fmt.Printf("\r\n")
 					fmt.Printf("%s\r\n", strings.Join(result.suggestions, " "))
 					fmt.Printf("$ %s", input)
 				case PartialMatch:
-					input = updateLastToken(input, result.suffix, false)
+					input = updateLastToken(input, result.suffix, result.addSpace)
 					fmt.Printf("%s", result.suffix)
 				default:
 					continue

@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"slices"
-	"sort"
 	"strings"
 )
 
@@ -21,6 +20,7 @@ type TabResult struct {
 	suffix              string
 	suggestions         []string
 	awaitingSuggestions bool
+	addSpace            bool
 }
 
 func autocomplete(input string, multiple bool) TabResult {
@@ -30,24 +30,26 @@ func autocomplete(input string, multiple bool) TabResult {
 			action:              SingleMatch,
 			suffix:              suffix,
 			awaitingSuggestions: false,
+			addSpace:            true,
 		}
 	}
 	parts := strings.Split(input, " ")
-	if idx := strings.LastIndex(parts[len(parts)-1], "/"); idx != -1 {
-		target := parts[len(parts)-1][idx+1:]
-		path := parts[len(parts)-1][:idx]
-		fileName, isDir := searchForPath(path, target)
-		if fileName != "" {
-			if isDir {
-				fileName += "/"
-			}
-			return TabResult{action: SingleMatch, suffix: fileName, awaitingSuggestions: false}
-		} else {
-			return TabResult{action: NoMatch, awaitingSuggestions: false}
+	target := parts[len(parts)-1]
+	path := "."
+	if idx := strings.LastIndex(target, "/"); idx != -1 {
+		target = target[idx+1:]
+		path = target[:idx]
+	}
+	fileName, isDir := searchForPath(path, target)
+	if fileName != "" {
+		if isDir {
+			fileName += "/"
+			return TabResult{action: SingleMatch, suffix: fileName[len(target):], awaitingSuggestions: false, addSpace: false}
 		}
+		return TabResult{action: SingleMatch, suffix: fileName[len(target):], awaitingSuggestions: false, addSpace: true}
 	}
 	matches := make([]string, 0)
-	target := input
+	target = input
 	if len(parts) > 1 {
 		target = parts[len(parts)-1]
 		matches = searchWorkingDir(target)
@@ -66,6 +68,7 @@ func handleCompletion(input string, matches []string, multiple bool) TabResult {
 			action:              SingleMatch,
 			suffix:              matches[0][len(input):],
 			awaitingSuggestions: false,
+			addSpace:            true,
 		}
 	}
 	lcp := longestCommonPrefix(matches)
@@ -74,6 +77,7 @@ func handleCompletion(input string, matches []string, multiple bool) TabResult {
 			action:              PartialMatch,
 			suffix:              lcp[len(input):],
 			awaitingSuggestions: false,
+			addSpace:            false,
 		}
 	}
 	if multiple {
@@ -81,18 +85,14 @@ func handleCompletion(input string, matches []string, multiple bool) TabResult {
 			action:              ShowSuggestions,
 			suggestions:         matches,
 			awaitingSuggestions: false,
+			addSpace:            false,
 		}
 	}
-	return TabResult{action: NoMatch, awaitingSuggestions: true}
+	return TabResult{action: NoMatch, awaitingSuggestions: true, addSpace: false}
 }
 
 func longestCommonPrefix(files []string) string {
-	copied := make([]string, len(files))
-	copy(copied, files)
-	sort.Slice(copied, func(i, j int) bool {
-		return len(copied[i]) < len(copied[j])
-	})
-	shortest := copied[0]
+	shortest := files[0]
 	res := ""
 	for _, str := range files {
 		if len(str) < len(shortest) {
