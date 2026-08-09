@@ -54,7 +54,6 @@ func main() {
 		fmt.Print("$ ")
 		buf.Reset(os.Stdin)
 		var input string
-		var isFirstWord bool = true
 		var multipleFiles bool = false
 		fileResults := make([]string, 0)
 		for {
@@ -68,17 +67,14 @@ func main() {
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
-					isFirstWord = false
+
 					continue
 				}
 				toMatch := input
-				if !isFirstWord {
-					idx := strings.LastIndex(input, " ")
-					if idx != -1 && idx < len(input) {
-						toMatch = input[idx+1:]
-					}
+				parts := strings.Split(input, " ")
+				if len(parts) > 1 {
+					toMatch = parts[len(parts)-1]
 				}
-				fileResults = searchForFileMatch(toMatch)
 				matches := len(fileResults)
 				if matches == 0 {
 					multipleFiles = false
@@ -89,7 +85,6 @@ func main() {
 					input += suffix
 					input += " "
 					fmt.Printf("%s ", suffix)
-					isFirstWord = false
 				} else {
 					lcp := longestCommonPrefix(fileResults)
 
