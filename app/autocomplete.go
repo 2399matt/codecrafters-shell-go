@@ -54,6 +54,10 @@ func autocomplete(input string, multiple bool) TabResult {
 		path = lastEntry[:idx+1]
 	}
 	var matches []FileMatch
+	if entry, ok := completion.table[parts[0]]; ok {
+		matches = getCompleteSuggestions(target, entry)
+		return handleCompletion(target, matches, multiple)
+	}
 	// shouldn't need to branch off anymore, if path is working dir already it should be fine.
 	if path != "." || len(parts) > 1 {
 		matches = searchForPath(path, target)
@@ -101,6 +105,17 @@ func displayNames(matches []FileMatch) []string {
 		res = append(res, match.displayName())
 	}
 	return res
+}
+
+func getCompleteSuggestions(prefix string, entry CompletionSpec) []FileMatch {
+	matches := make([]FileMatch, 0)
+	suggestions := completion.extractSuggestions(entry.path)
+	for _, sugg := range suggestions {
+		if strings.HasPrefix(sugg, prefix) {
+			matches = append(matches, FileMatch{name: sugg, isDir: false})
+		}
+	}
+	return matches
 }
 
 func longestCommonPrefix(files []FileMatch) string {

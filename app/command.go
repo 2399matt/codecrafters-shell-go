@@ -11,18 +11,14 @@ import (
 	"strings"
 )
 
+var completion = NewCompletion()
+
 type Command struct {
 	keyword string
 	parts   []string
 	out     io.Writer
 	errOut  io.Writer
 }
-
-type CompletionSpec struct {
-	completion string
-}
-
-var completions = make(map[string]CompletionSpec)
 
 // Need carriage bytes if write stream is set to raw terminal
 // This or a helper that checks on each call
@@ -168,18 +164,22 @@ func (command *Command) handleCommand() {
 
 func (command *Command) handleComplete() {
 	parts := command.parts
-	if len(parts) >= 2 && parts[0] == "-p" {
-		if c, ok := completions[parts[1]]; ok {
-			fmt.Fprintf(command.out, "complete -C '%s' %s\n", c.completion, parts[1])
-		} else {
-			fmt.Fprintf(command.errOut, "%s: %s: no completion specification\n", command.keyword, parts[1])
+	flag := parts[0]
+	switch flag {
+	case "-p":
+		if len(parts) >= 2 {
+			if c, ok := completion.table[parts[1]]; ok {
+				fmt.Fprintf(command.out, "complete -C '%s' %s\n", c.path, parts[1])
+			} else {
+				fmt.Fprintf(command.errOut, "%s: %s: no completion specification\n", command.keyword, parts[1])
+			}
 		}
-	}
-	if len(parts) >= 3 && parts[0] == "-C" {
-		key := parts[2]
-		path := parts[1]
-		completions[key] = CompletionSpec{completion: path}
-		return
+	case "-C":
+		if len(parts) >= 3 {
+			key := parts[2]
+			path := parts[1]
+			completion.table[key] = CompletionSpec{path: path}
+		}
 	}
 }
 
