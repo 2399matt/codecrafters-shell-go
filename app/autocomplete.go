@@ -23,6 +23,18 @@ type TabResult struct {
 	addSpace            bool
 }
 
+type FileMatch struct {
+	name  string
+	isDir bool
+}
+
+func (f FileMatch) displayName() string {
+	if f.isDir {
+		return f.name + "/"
+	}
+	return f.name
+}
+
 func autocomplete(input string, multiple bool) TabResult {
 	if keyword, ok := searchKeyword(input); ok {
 		suffix := keyword[len(input):]
@@ -41,34 +53,26 @@ func autocomplete(input string, multiple bool) TabResult {
 		target = lastEntry[idx+1:]
 		path = lastEntry[:idx+1]
 	}
-	fileName, isDir := searchForPath(path, target)
-	if fileName != "" {
-		if isDir {
-			fileName += "/"
-			return TabResult{action: SingleMatch, suffix: fileName[len(target):], awaitingSuggestions: false, addSpace: false}
-		}
-		return TabResult{action: SingleMatch, suffix: fileName[len(target):], awaitingSuggestions: false, addSpace: true}
-	}
-	matches := make([]string, 0)
-	if len(parts) > 1 {
-		target = parts[len(parts)-1]
-		matches = searchWorkingDir(target)
+	var matches []FileMatch
+	// shouldn't need to branch off anymore, if path is working dir already it should be fine.
+	if path != "." || len(parts) > 1 {
+		matches = searchForPath(path, target)
 	} else {
 		matches = searchForExec(target)
 	}
 	return handleCompletion(target, matches, multiple)
 }
 
-func handleCompletion(input string, matches []string, multiple bool) TabResult {
+func handleCompletion(input string, matches []FileMatch, multiple bool) TabResult {
 	if len(matches) == 0 {
 		return TabResult{action: NoMatch, awaitingSuggestions: false}
 	}
 	if len(matches) == 1 {
 		return TabResult{
 			action:              SingleMatch,
-			suffix:              matches[0][len(input):],
+			suffix:              matches[0].displayName()[len(input):],
 			awaitingSuggestions: false,
-			addSpace:            true,
+			addSpace:            !matches[0].isDir,
 		}
 	}
 	lcp := longestCommonPrefix(matches)
@@ -83,7 +87,7 @@ func handleCompletion(input string, matches []string, multiple bool) TabResult {
 	if multiple {
 		return TabResult{
 			action:              ShowSuggestions,
-			suggestions:         matches,
+			suggestions:         displayNames(matches),
 			awaitingSuggestions: false,
 			addSpace:            false,
 		}
@@ -91,18 +95,26 @@ func handleCompletion(input string, matches []string, multiple bool) TabResult {
 	return TabResult{action: NoMatch, awaitingSuggestions: true, addSpace: false}
 }
 
-func longestCommonPrefix(files []string) string {
-	shortest := files[0]
+func displayNames(matches []FileMatch) []string {
+	res := make([]string, 0, len(matches))
+	for _, match := range matches {
+		res = append(res, match.displayName())
+	}
+	return res
+}
+
+func longestCommonPrefix(files []FileMatch) string {
+	shortest := files[0].name
 	res := ""
 	for _, str := range files {
-		if len(str) < len(shortest) {
-			shortest = str
+		if len(str.name) < len(shortest) {
+			shortest = str.name
 		}
 	}
 	for i := 0; i < len(shortest); i++ {
 		ch := shortest[i]
 		for _, str := range files {
-			if i < len(str) && str[i] != ch {
+			if i < len(str.name) && str.name[i] != ch {
 				return res
 			}
 		}
@@ -120,24 +132,8 @@ func searchKeyword(prefix string) (string, bool) {
 	return "", false
 }
 
-func searchWorkingDir(prefix string) []string {
-	results := make([]string, 0)
-	files, err := os.ReadDir("./")
-	if err != nil {
-		return results
-	}
-	for _, file := range files {
-		if file.IsDir() || !strings.HasPrefix(file.Name(), prefix) {
-			continue
-		}
-		results = append(results, file.Name())
-	}
-	slices.Sort(results)
-	return results
-}
-
-func searchForExec(prefix string) []string {
-	results := make([]string, 0)
+func searchForExec(prefix string) []FileMatch {
+	results := make([]FileMatch, 0)
 	for _, path := range paths {
 		files, err := os.ReadDir(path)
 		if err != nil {
@@ -152,27 +148,30 @@ func searchForExec(prefix string) []string {
 				continue
 			}
 			if info.Mode().Perm()&0o111 != 0 {
-				results = append(results, file.Name())
+				results = append(results, FileMatch{name: file.Name(), isDir: false})
 			}
 		}
 	}
-	slices.Sort(results)
+	slices.SortFunc(results, func(a, b FileMatch) int {
+		return strings.Compare(a.name, b.name)
+	})
 	return results
 }
 
-func searchForPath(path, prefix string) (string, bool) {
-	//results := make([]string, 0)
+func searchForPath(path, prefix string) []FileMatch {
+	results := make([]FileMatch, 0)
 	files, err := os.ReadDir(path)
 	if err != nil {
-		return "", false
+		return results
 	}
 	if prefix == "" || len(files) == 1 {
-		return files[0].Name(), files[0].IsDir()
+		results = append(results, FileMatch{name: files[0].Name(), isDir: files[0].IsDir()})
+		return results
 	}
 	for _, file := range files {
 		if strings.HasPrefix(file.Name(), prefix) {
-			return file.Name(), file.IsDir()
+			results = append(results, FileMatch{name: file.Name(), isDir: file.IsDir()})
 		}
 	}
-	return "", false
+	return results
 }
