@@ -147,6 +147,8 @@ func (command *Command) handleCommand() {
 		} else {
 			fmt.Fprintf(command.errOut, "%s: %s: No such file or directory\n", command.keyword, command.parts[0])
 		}
+	case "complete":
+		command.handleComplete()
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
@@ -155,6 +157,13 @@ func (command *Command) handleCommand() {
 				fmt.Fprintf(command.errOut, "%s: command not found\n", command.keyword)
 			}
 		}
+	}
+}
+
+func (command *Command) handleComplete() {
+	parts := command.parts
+	if len(parts) >= 2 && parts[0] == "-p" {
+		fmt.Fprintf(command.errOut, "%s: %s: no completion specification\n", command.keyword, parts[1])
 	}
 }
 
