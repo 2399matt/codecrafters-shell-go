@@ -13,7 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
-var keywords = []string{"echo", "exit", "type", "pwd", "cd"}
+var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete"}
 var path string = os.Getenv("PATH")
 var home string = os.Getenv("HOME")
 var paths []string = strings.Split(path, ":")
@@ -62,6 +62,7 @@ func main() {
 				continue
 			} else if b == 127 {
 				if len(input) > 0 {
+					awaitingMultiple = false
 					input = input[:len(input)-1]
 					fmt.Print("\b \b")
 				}
@@ -70,6 +71,7 @@ func main() {
 				fmt.Print("\r\n")
 				break
 			} else {
+				awaitingMultiple = false
 				input += string(b)
 				fmt.Printf("%c", b)
 				continue
