@@ -191,18 +191,20 @@ func (command *Command) handleCommand() {
 		})
 		for i, job := range sJobs {
 			status := ""
+			trailing := ""
 			if job.isDone {
 				status = "Done"
 				delete(jobs, job.id)
 			} else {
 				status = "Running"
+				trailing = "&"
 			}
 			if i == len(sJobs)-2 {
-				fmt.Printf("[%d]-  %s                 %s &\n", job.id, status, job.command)
+				fmt.Printf("[%d]-  %s                 %s %s\n", job.id, status, job.command, trailing)
 			} else if i == len(sJobs)-1 {
-				fmt.Printf("[%d]+  %s                 %s &\n", job.id, status, job.command)
+				fmt.Printf("[%d]+  %s                 %s %s\n", job.id, status, job.command, trailing)
 			} else {
-				fmt.Printf("[%d]   %s                 %s &\n", job.id, status, job.command)
+				fmt.Printf("[%d]   %s                 %s %s\n", job.id, status, job.command, trailing)
 			}
 		}
 		// for k, v := range jobs {
