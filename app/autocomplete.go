@@ -56,10 +56,10 @@ func autocomplete(input string, multiple bool) TabResult {
 	var matches []FileMatch
 	if entry, ok := completion.table[parts[0]]; ok {
 		prevArg := ""
-		if len(parts) >= 3 {
+		if len(parts) >= 2 {
 			prevArg = parts[len(parts)-2]
 		}
-		matches = getCompleteSuggestions(parts[0], prevArg, target, entry)
+		matches = getCompleteSuggestions(input, parts[0], prevArg, target, entry)
 		return handleCompletion(target, matches, multiple)
 	}
 	// shouldn't need to branch off anymore, if path is working dir already it should be fine.
@@ -111,9 +111,9 @@ func displayNames(matches []FileMatch) []string {
 	return res
 }
 
-func getCompleteSuggestions(cmd, prevArg, prefix string, entry CompletionSpec) []FileMatch {
+func getCompleteSuggestions(rawInput, cmd, prevArg, prefix string, entry CompletionSpec) []FileMatch {
 	matches := make([]FileMatch, 0)
-	suggestions := completion.extractSuggestions(cmd, prevArg, entry.path, prefix)
+	suggestions := completion.extractSuggestions(rawInput, cmd, prevArg, entry.path, prefix)
 	for _, sugg := range suggestions {
 		if strings.HasPrefix(sugg, prefix) {
 			matches = append(matches, FileMatch{name: sugg, isDir: false})
@@ -183,7 +183,7 @@ func searchForPath(path, prefix string) []FileMatch {
 	if err != nil {
 		return results
 	}
-	if prefix == "" || len(files) == 1 {
+	if len(files) == 1 && strings.HasPrefix(files[0].Name(), prefix) {
 		results = append(results, FileMatch{name: files[0].Name(), isDir: files[0].IsDir()})
 		return results
 	}

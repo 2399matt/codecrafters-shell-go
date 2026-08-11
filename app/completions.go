@@ -21,12 +21,10 @@ func NewCompletion() *Completion {
 	}
 }
 
-func (completion *Completion) extractSuggestions(command, prevArg, path, prefix string) []string {
+func (completion *Completion) extractSuggestions(rawInput, command, prevArg, path, prefix string) []string {
 	cmd := exec.Command(path, command, prefix, prevArg)
-	currentLineEnv := strings.Join([]string{command, prevArg, prefix}, " ")
-	cmpLine := fmt.Sprintf("COMP_LINE=%s", currentLineEnv)
-	// definitely gonna break if not ascii
-	cmpPoint := fmt.Sprintf("COMP_POINT=%d", len(currentLineEnv))
+	cmpLine := fmt.Sprintf("COMP_LINE=%s", rawInput)
+	cmpPoint := fmt.Sprintf("COMP_POINT=%d", len(rawInput))
 	cmd.Env = append(cmd.Env, cmpLine, cmpPoint)
 	if out, err := cmd.Output(); err != nil {
 		return nil
