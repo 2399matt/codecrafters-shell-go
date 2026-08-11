@@ -7,9 +7,7 @@ import (
 )
 
 type Completion struct {
-	active bool
-	path   string
-	table  map[string]CompletionSpec
+	table map[string]CompletionSpec
 }
 
 // TODO will need to modify this for -W static lists.
@@ -19,15 +17,16 @@ type CompletionSpec struct {
 
 func NewCompletion() *Completion {
 	return &Completion{
-		active: false,
-		table:  make(map[string]CompletionSpec),
+		table: make(map[string]CompletionSpec),
 	}
 }
 
 func (completion *Completion) extractSuggestions(command, prevArg, path, prefix string) []string {
 	cmd := exec.Command(path, command, prefix, prevArg)
-	cmpLine := fmt.Sprintf("COMP_LINE=%s", strings.Join([]string{command, prevArg, prefix}, " "))
-	cmpPoint := fmt.Sprintf("COMP_POINT=%d", len(cmpLine))
+	currentLineEnv := strings.Join([]string{command, prevArg, prefix}, " ")
+	cmpLine := fmt.Sprintf("COMP_LINE=%s", currentLineEnv)
+	// definitely gonna break if not ascii
+	cmpPoint := fmt.Sprintf("COMP_POINT=%d", len(currentLineEnv))
 	cmd.Env = append(cmd.Env, cmpLine, cmpPoint)
 	if out, err := cmd.Output(); err != nil {
 		return nil
