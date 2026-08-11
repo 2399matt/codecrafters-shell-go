@@ -182,6 +182,11 @@ func (command *Command) handleComplete() {
 			path := parts[1]
 			completion.table[key] = CompletionSpec{path: path}
 		}
+	case "-r":
+		if len(parts) >= 2 {
+			key := parts[1]
+			delete(completion.table, key)
+		}
 	}
 }
 
