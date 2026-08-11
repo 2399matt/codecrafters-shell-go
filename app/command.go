@@ -14,6 +14,7 @@ import (
 var completion = NewCompletion()
 
 type Command struct {
+	isJob   bool
 	keyword string
 	parts   []string
 	out     io.Writer
@@ -41,6 +42,10 @@ func (command *Command) prepCommand() (func(), func(), error) {
 	var closeFunc func() = nil
 	var errCloseFunc func() = nil
 	var err error
+	if len(command.parts) >= 1 && command.parts[len(command.parts)-1] == "&" {
+		command.isJob = true
+		command.parts = command.parts[:len(command.parts)-1]
+	}
 	for i := 0; i < len(command.parts); i++ {
 		part := command.parts[i]
 		if part == "2>>" {
@@ -112,6 +117,26 @@ func (command *Command) setupRedirect(path string, flag int, target *io.Writer) 
 
 func (command *Command) handleCommand() {
 	closer, errCloser, err := command.prepCommand()
+	if command.isJob {
+		cmd := exec.Command(command.keyword, command.parts...)
+		cmd.Stderr = command.errOut
+		cmd.Stdout = command.out
+		if err := cmd.Start(); err != nil {
+			return
+		}
+		curr := runningId
+		runningId++
+		jobs[curr] = Job{
+			id:  runningId,
+			pid: cmd.Process.Pid,
+		}
+		fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
+		go func() {
+			cmd.Wait()
+			delete(jobs, curr)
+		}()
+		return
+	}
 	if err != nil {
 		fmt.Fprintln(command.errOut, err.Error())
 		return
