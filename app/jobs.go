@@ -1,8 +1,9 @@
 package main
 
 type Job struct {
-	id  int
-	pid int
+	id      int
+	command string
+	pid     int
 }
 
 var runningId int = 1

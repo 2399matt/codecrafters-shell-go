@@ -44,6 +44,9 @@ func (command *Command) prepCommand() (func(), func(), error) {
 	var err error
 	if len(command.parts) >= 1 && command.parts[len(command.parts)-1] == "&" {
 		command.isJob = true
+		// curr := runningId
+		// runningId++
+		// jobs[curr] = Job{command: command.keyword}
 		command.parts = command.parts[:len(command.parts)-1]
 	}
 	for i := 0; i < len(command.parts); i++ {
@@ -126,9 +129,11 @@ func (command *Command) handleCommand() {
 		}
 		curr := runningId
 		runningId++
+		task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
 		jobs[curr] = Job{
-			id:  runningId,
-			pid: cmd.Process.Pid,
+			id:      runningId,
+			pid:     cmd.Process.Pid,
+			command: task,
 		}
 		fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
 		go func() {
@@ -179,7 +184,9 @@ func (command *Command) handleCommand() {
 	case "complete":
 		command.handleComplete()
 	case "jobs":
-		return
+		for k, v := range jobs {
+			fmt.Printf("[%d]+  Running                 %s &\n", k, v.command)
+		}
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
