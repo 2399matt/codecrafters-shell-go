@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"fmt"
 	"io"
 	"os"
@@ -131,7 +132,7 @@ func (command *Command) handleCommand() {
 		runningId++
 		task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
 		jobs[curr] = Job{
-			id:      runningId,
+			id:      curr,
 			pid:     cmd.Process.Pid,
 			command: task,
 		}
@@ -184,9 +185,25 @@ func (command *Command) handleCommand() {
 	case "complete":
 		command.handleComplete()
 	case "jobs":
-		for k, v := range jobs {
-			fmt.Printf("[%d]+  Running                 %s &\n", k, v.command)
+		sJobs := make([]Job, 0, len(jobs))
+		for _, v := range jobs {
+			sJobs = append(sJobs, v)
 		}
+		slices.SortFunc(sJobs, func(a, b Job) int {
+			return cmp.Compare(a.id, b.id)
+		})
+		for i, job := range sJobs {
+			if i == len(sJobs)-2 {
+				fmt.Printf("[%d]-  Running                 %s &\n", job.id, job.command)
+			} else if i == len(sJobs)-1 {
+				fmt.Printf("[%d]+  Running                 %s &\n", job.id, job.command)
+			} else {
+				fmt.Printf("[%d]   Running                 %s &\n", job.id, job.command)
+			}
+		}
+		// for k, v := range jobs {
+		// 	fmt.Printf("[%d]+  Running                 %s &\n", k, v.command)
+		// }
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
