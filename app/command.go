@@ -131,16 +131,13 @@ func (command *Command) handleCommand() {
 		curr := runningId
 		runningId++
 		task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
-		jobs[curr] = Job{
-			id:      curr,
-			pid:     cmd.Process.Pid,
-			command: task,
-		}
+		job := &Job{id: curr, pid: cmd.Process.Pid, command: task}
+		jobs[curr] = job
 		fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
-		go func() {
+		go func(job *Job) {
 			cmd.Wait()
-			delete(jobs, curr)
-		}()
+			job.isDone = true
+		}(job)
 		return
 	}
 	if err != nil {
@@ -187,18 +184,25 @@ func (command *Command) handleCommand() {
 	case "jobs":
 		sJobs := make([]Job, 0, len(jobs))
 		for _, v := range jobs {
-			sJobs = append(sJobs, v)
+			sJobs = append(sJobs, *v)
 		}
 		slices.SortFunc(sJobs, func(a, b Job) int {
 			return cmp.Compare(a.id, b.id)
 		})
 		for i, job := range sJobs {
-			if i == len(sJobs)-2 {
-				fmt.Printf("[%d]-  Running                 %s &\n", job.id, job.command)
-			} else if i == len(sJobs)-1 {
-				fmt.Printf("[%d]+  Running                 %s &\n", job.id, job.command)
+			status := ""
+			if job.isDone {
+				status = "Done"
+				delete(jobs, job.id)
 			} else {
-				fmt.Printf("[%d]   Running                 %s &\n", job.id, job.command)
+				status = "Running"
+			}
+			if i == len(sJobs)-2 {
+				fmt.Printf("[%d]-  %s                 %s &\n", job.id, status, job.command)
+			} else if i == len(sJobs)-1 {
+				fmt.Printf("[%d]+  %s                 %s &\n", job.id, status, job.command)
+			} else {
+				fmt.Printf("[%d]   %s                 %s &\n", job.id, status, job.command)
 			}
 		}
 		// for k, v := range jobs {
