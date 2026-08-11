@@ -40,6 +40,7 @@ func (command *Command) prepCommand() (func(), func(), error) {
 	parts := make([]string, 0, len(command.parts))
 	var closeFunc func() = nil
 	var errCloseFunc func() = nil
+	var err error
 	for i := 0; i < len(command.parts); i++ {
 		part := command.parts[i]
 		if part == "2>>" {
@@ -48,12 +49,10 @@ func (command *Command) prepCommand() (func(), func(), error) {
 				return nil, nil, nil
 			}
 			path := command.parts[i+1]
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			errCloseFunc, err = command.setupRedirect(path, os.O_APPEND, &command.errOut)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+				return nil, nil, err
 			}
-			command.errOut = file
-			errCloseFunc = func() { file.Close() }
 			i++
 			continue
 		}
@@ -63,12 +62,10 @@ func (command *Command) prepCommand() (func(), func(), error) {
 				return nil, nil, nil
 			}
 			path := command.parts[i+1]
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			errCloseFunc, err = command.setupRedirect(path, os.O_TRUNC, &command.errOut)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+				return nil, nil, err
 			}
-			command.errOut = file
-			errCloseFunc = func() { file.Close() }
 			i++
 			continue
 		}
@@ -78,12 +75,10 @@ func (command *Command) prepCommand() (func(), func(), error) {
 				return nil, nil, nil
 			}
 			path := command.parts[i+1]
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+			closeFunc, err = command.setupRedirect(path, os.O_APPEND, &command.out)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+				return nil, nil, err
 			}
-			command.out = file
-			closeFunc = func() { file.Close() }
 			i++
 			continue
 		}
@@ -93,12 +88,10 @@ func (command *Command) prepCommand() (func(), func(), error) {
 				return nil, nil, nil
 			}
 			path := command.parts[i+1]
-			file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			closeFunc, err = command.setupRedirect(path, os.O_TRUNC, &command.out)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, command.parts[i+1])
+				return nil, nil, err
 			}
-			command.out = file
-			closeFunc = func() { file.Close() }
 			i++
 			continue
 		}
@@ -106,6 +99,15 @@ func (command *Command) prepCommand() (func(), func(), error) {
 	}
 	command.parts = parts
 	return closeFunc, errCloseFunc, nil
+}
+
+func (command *Command) setupRedirect(path string, flag int, target *io.Writer) (func(), error) {
+	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|flag, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, path)
+	}
+	*target = file
+	return func() { file.Close() }, nil
 }
 
 func (command *Command) handleCommand() {

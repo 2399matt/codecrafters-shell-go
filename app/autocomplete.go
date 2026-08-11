@@ -55,7 +55,11 @@ func autocomplete(input string, multiple bool) TabResult {
 	}
 	var matches []FileMatch
 	if entry, ok := completion.table[parts[0]]; ok {
-		matches = getCompleteSuggestions(target, entry)
+		prevArg := ""
+		if len(parts) >= 3 {
+			prevArg = parts[len(parts)-2]
+		}
+		matches = getCompleteSuggestions(parts[0], prevArg, target, entry)
 		return handleCompletion(target, matches, multiple)
 	}
 	// shouldn't need to branch off anymore, if path is working dir already it should be fine.
@@ -107,9 +111,9 @@ func displayNames(matches []FileMatch) []string {
 	return res
 }
 
-func getCompleteSuggestions(prefix string, entry CompletionSpec) []FileMatch {
+func getCompleteSuggestions(cmd, prevArg, prefix string, entry CompletionSpec) []FileMatch {
 	matches := make([]FileMatch, 0)
-	suggestions := completion.extractSuggestions(entry.path)
+	suggestions := completion.extractSuggestions(cmd, prevArg, entry.path, prefix)
 	for _, sugg := range suggestions {
 		if strings.HasPrefix(sugg, prefix) {
 			matches = append(matches, FileMatch{name: sugg, isDir: false})
