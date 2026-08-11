@@ -153,6 +153,8 @@ func (command *Command) handleCommand() {
 		}
 	case "complete":
 		command.handleComplete()
+	case "jobs":
+		return
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
