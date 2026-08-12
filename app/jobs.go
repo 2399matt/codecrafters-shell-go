@@ -11,18 +11,19 @@ type Job struct {
 }
 
 type JobHandler struct {
-	mu   *sync.Mutex
-	jobs map[int]*Job
+	mu        *sync.Mutex
+	jobs      map[int]*Job
+	runningId int
 	//currentJob  int
 	//previousJob int
 }
 
-var runningId int = 1
 var cleanup = make(chan *Job, 10)
 
 //var jobs = make(map[int]*Job)
 
 var jobHandler = &JobHandler{
-	mu:   &sync.Mutex{},
-	jobs: make(map[int]*Job),
+	mu:        &sync.Mutex{},
+	jobs:      make(map[int]*Job),
+	runningId: 1,
 }

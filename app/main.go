@@ -93,6 +93,7 @@ func main() {
 				job.reported = true
 				fmt.Printf("[%d]+  %s                 %s\n", job.id, "Done", job.command)
 				delete(jobHandler.jobs, job.id)
+				jobHandler.runningId--
 			}
 			jobHandler.mu.Unlock()
 		default:

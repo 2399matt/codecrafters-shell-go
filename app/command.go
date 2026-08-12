@@ -182,6 +182,7 @@ func (command *Command) handleCommand() {
 				if !job.reported {
 					job.reported = true
 					delete(jobHandler.jobs, job.id)
+					jobHandler.runningId--
 				} else {
 					jobHandler.mu.Unlock()
 					continue
@@ -218,11 +219,11 @@ func (command *Command) setupJob() {
 	if err := cmd.Start(); err != nil {
 		return
 	}
-	curr := runningId
-	runningId++
+	jobHandler.mu.Lock()
+	curr := jobHandler.runningId
+	jobHandler.runningId++
 	task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
 	job := &Job{id: curr, pid: cmd.Process.Pid, command: task}
-	jobHandler.mu.Lock()
 	jobHandler.jobs[curr] = job
 	jobHandler.mu.Unlock()
 	fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
@@ -270,7 +271,7 @@ func (command *Command) handleExec() bool {
 			cmd.Stdout = command.out
 			cmd.Stderr = command.errOut
 			if err := cmd.Run(); err != nil {
-				// tf
+				// wtf
 				return true
 			} else {
 				return true
