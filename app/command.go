@@ -45,9 +45,6 @@ func (command *Command) prepCommand() (func(), func(), error) {
 	var err error
 	if len(command.parts) >= 1 && command.parts[len(command.parts)-1] == "&" {
 		command.isJob = true
-		// curr := runningId
-		// runningId++
-		// jobs[curr] = Job{command: command.keyword}
 		command.parts = command.parts[:len(command.parts)-1]
 	}
 	for i := 0; i < len(command.parts); i++ {
@@ -122,22 +119,7 @@ func (command *Command) setupRedirect(path string, flag int, target *io.Writer) 
 func (command *Command) handleCommand() {
 	closer, errCloser, err := command.prepCommand()
 	if command.isJob {
-		cmd := exec.Command(command.keyword, command.parts...)
-		cmd.Stderr = command.errOut
-		cmd.Stdout = command.out
-		if err := cmd.Start(); err != nil {
-			return
-		}
-		curr := runningId
-		runningId++
-		task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
-		job := &Job{id: curr, pid: cmd.Process.Pid, command: task}
-		jobs[curr] = job
-		fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
-		go func(job *Job) {
-			cmd.Wait()
-			job.isDone = true
-		}(job)
+		command.setupJob()
 		return
 	}
 	if err != nil {
@@ -182,34 +164,42 @@ func (command *Command) handleCommand() {
 	case "complete":
 		command.handleComplete()
 	case "jobs":
-		sJobs := make([]Job, 0, len(jobs))
-		for _, v := range jobs {
-			sJobs = append(sJobs, *v)
+		sJobs := make([]*Job, 0)
+		jobHandler.mu.Lock()
+		for _, v := range jobHandler.jobs {
+			sJobs = append(sJobs, v)
 		}
-		slices.SortFunc(sJobs, func(a, b Job) int {
+		jobHandler.mu.Unlock()
+		slices.SortFunc(sJobs, func(a, b *Job) int {
 			return cmp.Compare(a.id, b.id)
 		})
 		for i, job := range sJobs {
 			status := ""
 			trailing := ""
+			jobHandler.mu.Lock()
 			if job.isDone {
 				status = "Done"
-				delete(jobs, job.id)
+				if !job.reported {
+					job.reported = true
+					delete(jobHandler.jobs, job.id)
+					jobHandler.mu.Unlock()
+				} else {
+					jobHandler.mu.Unlock()
+					continue
+				}
 			} else {
 				status = "Running"
 				trailing = "&"
 			}
-			if i == len(sJobs)-2 {
-				fmt.Printf("[%d]-  %s                 %s %s\n", job.id, status, job.command, trailing)
-			} else if i == len(sJobs)-1 {
+			switch i {
+			case len(sJobs) - 1:
 				fmt.Printf("[%d]+  %s                 %s %s\n", job.id, status, job.command, trailing)
-			} else {
+			case len(sJobs) - 2:
+				fmt.Printf("[%d]-  %s                 %s %s\n", job.id, status, job.command, trailing)
+			default:
 				fmt.Printf("[%d]   %s                 %s %s\n", job.id, status, job.command, trailing)
 			}
 		}
-		// for k, v := range jobs {
-		// 	fmt.Printf("[%d]+  Running                 %s &\n", k, v.command)
-		// }
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
@@ -219,6 +209,30 @@ func (command *Command) handleCommand() {
 			}
 		}
 	}
+}
+
+func (command *Command) setupJob() {
+	cmd := exec.Command(command.keyword, command.parts...)
+	cmd.Stderr = command.errOut
+	cmd.Stdout = command.out
+	if err := cmd.Start(); err != nil {
+		return
+	}
+	curr := runningId
+	runningId++
+	task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
+	job := &Job{id: curr, pid: cmd.Process.Pid, command: task}
+	jobHandler.mu.Lock()
+	jobHandler.jobs[curr] = job
+	jobHandler.mu.Unlock()
+	fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
+	go func(job *Job) {
+		cmd.Wait()
+		jobHandler.mu.Lock()
+		job.isDone = true
+		jobHandler.mu.Unlock()
+		cleanup <- job
+	}(job)
 }
 
 func (command *Command) handleComplete() {
