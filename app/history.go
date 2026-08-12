@@ -8,9 +8,10 @@ import (
 )
 
 type History struct {
-	saveFile string
-	entries  []string
-	cursor   int
+	writeFile string
+	readFile  string
+	entries   []string
+	cursor    int
 }
 
 var history = &History{entries: make([]string, 0)}
@@ -44,8 +45,20 @@ func (h *History) stepForward() string {
 	return h.entries[h.cursor]
 }
 
+func (h *History) writeToFile(path string) {
+	h.writeFile = path
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	for _, entry := range h.entries {
+		fmt.Fprintf(file, "%s\n", entry)
+	}
+}
+
 func (h *History) readFromFile(path string) {
-	h.saveFile = path
+	h.readFile = path
 	file, err := os.Open(path)
 	if err != nil {
 		return

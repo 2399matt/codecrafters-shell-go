@@ -95,6 +95,9 @@ func (command *Command) handleCommand() {
 			if command.parts[0] == "-r" {
 				history.readFromFile(command.parts[1])
 				return
+			} else if command.parts[0] == "-w" {
+				history.writeToFile(command.parts[1])
+				return
 			}
 			toDisplay, err = strconv.Atoi(command.parts[0])
 			if err != nil {
