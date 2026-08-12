@@ -92,11 +92,15 @@ func (command *Command) handleCommand() {
 	case "history":
 		toDisplay := 0
 		if len(command.parts) >= 1 {
-			if command.parts[0] == "-r" {
+			switch command.parts[0] {
+			case "-r":
 				history.readFromFile(command.parts[1])
 				return
-			} else if command.parts[0] == "-w" {
+			case "-w":
 				history.writeToFile(command.parts[1])
+				return
+			case "-a":
+				history.appendToFile(command.parts[1])
 				return
 			}
 			toDisplay, err = strconv.Atoi(command.parts[0])

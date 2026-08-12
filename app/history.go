@@ -8,6 +8,7 @@ import (
 )
 
 type History struct {
+	appendPtr int
 	writeFile string
 	readFile  string
 	entries   []string
@@ -55,6 +56,18 @@ func (h *History) writeToFile(path string) {
 	for _, entry := range h.entries {
 		fmt.Fprintf(file, "%s\n", entry)
 	}
+}
+
+func (h *History) appendToFile(path string) {
+	file, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	for i := h.appendPtr; i < len(h.entries); i++ {
+		fmt.Fprintf(file, "%s\n", h.entries[i])
+	}
+	h.appendPtr = len(h.entries)
 }
 
 func (h *History) readFromFile(path string) {
