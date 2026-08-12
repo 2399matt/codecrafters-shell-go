@@ -11,11 +11,11 @@ import (
 	"strings"
 )
 
+// TODO for pipelines, we need to have a slice of commands. Parser can return this slice.
+// handleCommand will need to be done async, and the setting up of the pipes out->in(next) needs to be done
+// jobs will also be fragile, & will need to register an entire pipe command, not just parts (no idea how to do that yet)
 var completion = NewCompletion()
 
-type Pipeline struct {
-	commands []*Command
-}
 type Command struct {
 	isJob   bool
 	keyword string

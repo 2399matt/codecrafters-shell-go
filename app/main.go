@@ -13,7 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
-var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete", "jobs"}
+var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete", "jobs", "history"}
 var path string = os.Getenv("PATH")
 var home string = os.Getenv("HOME")
 var paths []string = strings.Split(path, ":")
