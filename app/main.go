@@ -14,13 +14,17 @@ import (
 )
 
 var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete", "jobs", "history"}
-var path string = os.Getenv("PATH")
-var home string = os.Getenv("HOME")
-var paths []string = strings.Split(path, ":")
+var Path string = os.Getenv("PATH")
+var Home string = os.Getenv("HOME")
+var HistoryFile string = os.Getenv("HISTFILE")
+var paths []string = strings.Split(Path, ":")
 var terminalOut io.Writer = TerminalWriter{os.Stdout}
 var terminalErr io.Writer = TerminalWriter{os.Stderr}
 
 func main() {
+	if HistoryFile != "" {
+		history.readFromFile(HistoryFile)
+	}
 	buf := bufio.NewReader(os.Stdin)
 	for {
 		old, err := term.MakeRaw(int(os.Stdin.Fd()))
@@ -118,7 +122,7 @@ func main() {
 func handleDirChange(path string) bool {
 	var err error
 	if path == "~" {
-		if err = os.Chdir(home); err != nil {
+		if err = os.Chdir(Home); err != nil {
 			return false
 		}
 		return true
