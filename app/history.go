@@ -1,13 +1,16 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
+	"os"
 )
 
 type History struct {
-	entries []string
-	cursor  int
+	saveFile string
+	entries  []string
+	cursor   int
 }
 
 var history = &History{entries: make([]string, 0)}
@@ -39,4 +42,21 @@ func (h *History) stepForward() string {
 		h.cursor++
 	}
 	return h.entries[h.cursor]
+}
+
+func (h *History) readFromFile(path string) {
+	h.saveFile = path
+	file, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+	scan := bufio.NewScanner(file)
+	for scan.Scan() {
+		line := scan.Text()
+		h.entries = append(h.entries, line)
+	}
+	if err := scan.Err(); err != nil {
+		return
+	}
 }

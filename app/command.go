@@ -92,6 +92,10 @@ func (command *Command) handleCommand() {
 	case "history":
 		toDisplay := 0
 		if len(command.parts) >= 1 {
+			if command.parts[0] == "-r" {
+				history.readFromFile(command.parts[1])
+				return
+			}
 			toDisplay, err = strconv.Atoi(command.parts[0])
 			if err != nil {
 				fmt.Fprintln(command.errOut, "Invalid argument for 'history'")
