@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 )
 
 type History struct {
@@ -85,4 +86,28 @@ func (h *History) readFromFile(path string) {
 	if err := scan.Err(); err != nil {
 		return
 	}
+}
+
+func handleHistory(command *Command) {
+	var err error
+	var toDisplay int
+	if len(command.parts) >= 1 {
+		switch command.parts[0] {
+		case "-r":
+			history.readFromFile(command.parts[1])
+			return
+		case "-w":
+			history.writeToFile(command.parts[1])
+			return
+		case "-a":
+			history.appendToFile(command.parts[1])
+			return
+		}
+		toDisplay, err = strconv.Atoi(command.parts[0])
+		if err != nil {
+			fmt.Fprintln(command.errOut, "Invalid argument for 'history'")
+			return
+		}
+	}
+	history.listHistory(command.out, toDisplay)
 }

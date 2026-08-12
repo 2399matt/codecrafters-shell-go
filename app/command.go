@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 )
 
@@ -91,26 +90,9 @@ func (command *Command) handleCommand() {
 	case "jobs":
 		handleJobs(command)
 	case "history":
-		toDisplay := 0
-		if len(command.parts) >= 1 {
-			switch command.parts[0] {
-			case "-r":
-				history.readFromFile(command.parts[1])
-				return
-			case "-w":
-				history.writeToFile(command.parts[1])
-				return
-			case "-a":
-				history.appendToFile(command.parts[1])
-				return
-			}
-			toDisplay, err = strconv.Atoi(command.parts[0])
-			if err != nil {
-				fmt.Fprintln(command.errOut, "Invalid argument for 'history'")
-				return
-			}
-		}
-		history.listHistory(command.out, toDisplay)
+		handleHistory(command)
+	case "declare":
+		command.handleDeclare()
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
@@ -118,6 +100,22 @@ func (command *Command) handleCommand() {
 			} else {
 				fmt.Fprintf(command.errOut, "%s: command not found\n", command.keyword)
 			}
+		}
+	}
+}
+
+func (command *Command) handleDeclare() {
+	if len(command.parts) == 0 {
+		return
+	}
+	flag := command.parts[0]
+	switch flag {
+	case "-p":
+		name := command.parts[1]
+		if _, ok := declarations[name]; !ok {
+			fmt.Fprintf(command.errOut, "%s: %s: not found\n", command.keyword, name)
+		} else {
+
 		}
 	}
 }

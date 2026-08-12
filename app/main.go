@@ -20,6 +20,7 @@ var HistoryFile string = os.Getenv("HISTFILE")
 var paths []string = strings.Split(Path, ":")
 var terminalOut io.Writer = TerminalWriter{os.Stdout}
 var terminalErr io.Writer = TerminalWriter{os.Stderr}
+var declarations = make(map[string]string)
 
 func main() {
 	if HistoryFile != "" {
