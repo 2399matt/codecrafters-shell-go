@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"cmp"
 	"fmt"
 	"io"
 	"os"
@@ -14,10 +13,14 @@ import (
 
 var completion = NewCompletion()
 
+type Pipeline struct {
+	commands []*Command
+}
 type Command struct {
 	isJob   bool
 	keyword string
 	parts   []string
+	in      io.Reader
 	out     io.Writer
 	errOut  io.Writer
 }
@@ -34,86 +37,6 @@ func (t TerminalWriter) Write(p []byte) (n int, err error) {
 		return 0, err
 	}
 	return len(p), nil
-}
-
-func (command *Command) prepCommand() (func(), func(), error) {
-	command.out = terminalOut
-	command.errOut = terminalErr
-	parts := make([]string, 0, len(command.parts))
-	var closeFunc func() = nil
-	var errCloseFunc func() = nil
-	var err error
-	if len(command.parts) >= 1 && command.parts[len(command.parts)-1] == "&" {
-		command.isJob = true
-		command.parts = command.parts[:len(command.parts)-1]
-	}
-	for i := 0; i < len(command.parts); i++ {
-		part := command.parts[i]
-		if part == "2>>" {
-			if i >= len(command.parts)-1 {
-				fmt.Fprintln(command.errOut, "No specified file")
-				return nil, nil, nil
-			}
-			path := command.parts[i+1]
-			errCloseFunc, err = command.setupRedirect(path, os.O_APPEND, &command.errOut)
-			if err != nil {
-				return nil, nil, err
-			}
-			i++
-			continue
-		}
-		if part == "2>" {
-			if i >= len(command.parts)-1 {
-				fmt.Fprintln(command.errOut, "No specified file")
-				return nil, nil, nil
-			}
-			path := command.parts[i+1]
-			errCloseFunc, err = command.setupRedirect(path, os.O_TRUNC, &command.errOut)
-			if err != nil {
-				return nil, nil, err
-			}
-			i++
-			continue
-		}
-		if part == ">>" || part == "1>>" {
-			if i >= len(command.parts)-1 {
-				fmt.Fprintln(command.errOut, "No specified file")
-				return nil, nil, nil
-			}
-			path := command.parts[i+1]
-			closeFunc, err = command.setupRedirect(path, os.O_APPEND, &command.out)
-			if err != nil {
-				return nil, nil, err
-			}
-			i++
-			continue
-		}
-		if part == ">" || part == "1>" {
-			if i >= len(command.parts)-1 {
-				fmt.Fprintln(command.errOut, "No specified file")
-				return nil, nil, nil
-			}
-			path := command.parts[i+1]
-			closeFunc, err = command.setupRedirect(path, os.O_TRUNC, &command.out)
-			if err != nil {
-				return nil, nil, err
-			}
-			i++
-			continue
-		}
-		parts = append(parts, command.parts[i])
-	}
-	command.parts = parts
-	return closeFunc, errCloseFunc, nil
-}
-
-func (command *Command) setupRedirect(path string, flag int, target *io.Writer) (func(), error) {
-	file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|flag, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("%s: %s: No such file or directory\n", command.keyword, path)
-	}
-	*target = file
-	return func() { file.Close() }, nil
 }
 
 func (command *Command) handleCommand() {
@@ -164,43 +87,7 @@ func (command *Command) handleCommand() {
 	case "complete":
 		command.handleComplete()
 	case "jobs":
-		sJobs := make([]*Job, 0)
-		jobHandler.mu.Lock()
-		for _, v := range jobHandler.jobs {
-			sJobs = append(sJobs, v)
-		}
-		jobHandler.mu.Unlock()
-		slices.SortFunc(sJobs, func(a, b *Job) int {
-			return cmp.Compare(a.id, b.id)
-		})
-		for i, job := range sJobs {
-			status := ""
-			trailing := ""
-			jobHandler.mu.Lock()
-			if job.isDone {
-				status = "Done"
-				if !job.reported {
-					job.reported = true
-					delete(jobHandler.jobs, job.id)
-					jobHandler.runningId--
-				} else {
-					jobHandler.mu.Unlock()
-					continue
-				}
-			} else {
-				status = "Running"
-				trailing = "&"
-			}
-			jobHandler.mu.Unlock()
-			switch i {
-			case len(sJobs) - 1:
-				fmt.Printf("[%d]+  %s                 %s %s\n", job.id, status, job.command, trailing)
-			case len(sJobs) - 2:
-				fmt.Printf("[%d]-  %s                 %s %s\n", job.id, status, job.command, trailing)
-			default:
-				fmt.Printf("[%d]   %s                 %s %s\n", job.id, status, job.command, trailing)
-			}
-		}
+		handleJobs(command)
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
@@ -208,56 +95,6 @@ func (command *Command) handleCommand() {
 			} else {
 				fmt.Fprintf(command.errOut, "%s: command not found\n", command.keyword)
 			}
-		}
-	}
-}
-
-func (command *Command) setupJob() {
-	cmd := exec.Command(command.keyword, command.parts...)
-	cmd.Stderr = command.errOut
-	cmd.Stdout = command.out
-	if err := cmd.Start(); err != nil {
-		return
-	}
-	jobHandler.mu.Lock()
-	curr := jobHandler.runningId
-	jobHandler.runningId++
-	task := fmt.Sprintf("%s", command.keyword+" "+strings.Join(command.parts, " "))
-	job := &Job{id: curr, pid: cmd.Process.Pid, command: task}
-	jobHandler.jobs[curr] = job
-	jobHandler.mu.Unlock()
-	fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
-	go func(job *Job) {
-		cmd.Wait()
-		jobHandler.mu.Lock()
-		job.isDone = true
-		jobHandler.mu.Unlock()
-		cleanup <- job
-	}(job)
-}
-
-func (command *Command) handleComplete() {
-	parts := command.parts
-	flag := parts[0]
-	switch flag {
-	case "-p":
-		if len(parts) >= 2 {
-			if c, ok := completion.table[parts[1]]; ok {
-				fmt.Fprintf(command.out, "complete -C '%s' %s\n", c.path, parts[1])
-			} else {
-				fmt.Fprintf(command.errOut, "%s: %s: no completion specification\n", command.keyword, parts[1])
-			}
-		}
-	case "-C":
-		if len(parts) >= 3 {
-			key := parts[2]
-			path := parts[1]
-			completion.table[key] = CompletionSpec{path: path}
-		}
-	case "-r":
-		if len(parts) >= 2 {
-			key := parts[1]
-			delete(completion.table, key)
 		}
 	}
 }

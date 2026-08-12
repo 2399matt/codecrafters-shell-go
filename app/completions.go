@@ -32,3 +32,29 @@ func (completion *Completion) extractSuggestions(rawInput, command, prevArg, pat
 		return strings.Fields(string(out))
 	}
 }
+
+func (command *Command) handleComplete() {
+	parts := command.parts
+	flag := parts[0]
+	switch flag {
+	case "-p":
+		if len(parts) >= 2 {
+			if c, ok := completion.table[parts[1]]; ok {
+				fmt.Fprintf(command.out, "complete -C '%s' %s\n", c.path, parts[1])
+			} else {
+				fmt.Fprintf(command.errOut, "%s: %s: no completion specification\n", command.keyword, parts[1])
+			}
+		}
+	case "-C":
+		if len(parts) >= 3 {
+			key := parts[2]
+			path := parts[1]
+			completion.table[key] = CompletionSpec{path: path}
+		}
+	case "-r":
+		if len(parts) >= 2 {
+			key := parts[1]
+			delete(completion.table, key)
+		}
+	}
+}

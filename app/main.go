@@ -91,7 +91,7 @@ func main() {
 			jobHandler.mu.Lock()
 			if !job.reported {
 				job.reported = true
-				fmt.Printf("[%d]+  %s                 %s\n", job.id, "Done", job.command)
+				fmt.Fprintf(command.out, "[%d]+  %s                 %s\n", job.id, "Done", job.command)
 				delete(jobHandler.jobs, job.id)
 				jobHandler.runningId--
 			}
