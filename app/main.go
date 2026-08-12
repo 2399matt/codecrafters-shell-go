@@ -60,6 +60,19 @@ func main() {
 					continue
 				}
 				continue
+			} else if b == 27 {
+				b2, _ := buf.ReadByte()
+				b3, _ := buf.ReadByte()
+				if b2 == 91 {
+					switch b3 {
+					case 65:
+						input = history.stepBack()
+						fmt.Printf("\r$ %s", input)
+					case 66:
+						input = history.stepForward()
+						fmt.Printf("\r$ %s", input)
+					}
+				}
 			} else if b == 127 {
 				if len(input) > 0 {
 					awaitingMultiple = false

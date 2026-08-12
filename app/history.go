@@ -7,6 +7,7 @@ import (
 
 type History struct {
 	entries []string
+	cursor  int
 }
 
 var history = &History{entries: make([]string, 0)}
@@ -23,10 +24,19 @@ func (h *History) listHistory(w io.Writer, numEntries int) {
 
 func (h *History) pushEntry(entry string) {
 	h.entries = append(h.entries, entry)
+	h.cursor++
 }
 
-func (h *History) popEntry() string {
-	entry := h.entries[len(h.entries)-1]
-	h.entries = h.entries[:len(h.entries)-1]
-	return entry
+func (h *History) stepBack() string {
+	if h.cursor > 0 {
+		h.cursor--
+	}
+	return h.entries[h.cursor]
+}
+
+func (h *History) stepForward() string {
+	if h.cursor < len(h.entries)-1 {
+		h.cursor++
+	}
+	return h.entries[h.cursor]
 }
