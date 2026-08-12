@@ -182,7 +182,6 @@ func (command *Command) handleCommand() {
 				if !job.reported {
 					job.reported = true
 					delete(jobHandler.jobs, job.id)
-					jobHandler.mu.Unlock()
 				} else {
 					jobHandler.mu.Unlock()
 					continue
@@ -191,6 +190,7 @@ func (command *Command) handleCommand() {
 				status = "Running"
 				trailing = "&"
 			}
+			jobHandler.mu.Unlock()
 			switch i {
 			case len(sJobs) - 1:
 				fmt.Printf("[%d]+  %s                 %s %s\n", job.id, status, job.command, trailing)
