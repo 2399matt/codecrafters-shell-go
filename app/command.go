@@ -74,6 +74,7 @@ func (command *Command) handleCommand() {
 	case "echo":
 		fmt.Fprintf(command.out, "%s\n", strings.Join(command.parts, " "))
 	case "exit":
+		history.writeToFile(HistoryFile)
 		os.Exit(0)
 	case "pwd":
 		if wd, err := os.Getwd(); err == nil {
