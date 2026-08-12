@@ -112,11 +112,16 @@ func (command *Command) handleDeclare() {
 	switch flag {
 	case "-p":
 		name := command.parts[1]
-		if _, ok := declarations[name]; !ok {
+		if val, ok := declarations[name]; !ok {
 			fmt.Fprintf(command.errOut, "%s: %s: not found\n", command.keyword, name)
 		} else {
-
+			fmt.Fprintf(command.out, "%s -- %s=\"%s\"\n", command.keyword, name, val)
 		}
+	default:
+		declaration := strings.Split(command.parts[0], "=")
+		name := declaration[0]
+		val := declaration[1]
+		declarations[name] = val
 	}
 }
 
