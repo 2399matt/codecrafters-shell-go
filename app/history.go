@@ -11,11 +11,13 @@ type History struct {
 
 var history = &History{entries: make([]string, 0)}
 
-func (h *History) listHistory(w io.Writer) {
-	i := 1
-	for _, str := range h.entries {
-		fmt.Fprintf(w, "\t%d %s\n", i, str)
-		i++
+func (h *History) listHistory(w io.Writer, numEntries int) {
+	start := 0
+	if numEntries != 0 {
+		start = len(h.entries) - numEntries
+	}
+	for i := start; i < len(h.entries); i++ {
+		fmt.Fprintf(w, "\t%d %s\n", i+1, h.entries[i])
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -89,7 +90,15 @@ func (command *Command) handleCommand() {
 	case "jobs":
 		handleJobs(command)
 	case "history":
-		history.listHistory(command.out)
+		toDisplay := 0
+		if len(command.parts) >= 1 {
+			toDisplay, err = strconv.Atoi(command.parts[0])
+			if err != nil {
+				fmt.Fprintln(command.errOut, "Invalid argument for 'history'")
+				return
+			}
+		}
+		history.listHistory(command.out, toDisplay)
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
