@@ -67,10 +67,10 @@ func main() {
 					switch b3 {
 					case 65:
 						input = history.stepBack()
-						fmt.Printf("\r$ %s", input)
+						resetInput(input)
 					case 66:
 						input = history.stepForward()
-						fmt.Printf("\r$ %s", input)
+						resetInput(input)
 					}
 				}
 			} else if b == 127 {
@@ -151,4 +151,8 @@ func updateLastToken(currentInput string, added string, addSpace bool) string {
 		joined += " "
 	}
 	return joined
+}
+
+func resetInput(input string) {
+	fmt.Printf("\r\033[K$ %s", input)
 }
