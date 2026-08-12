@@ -13,7 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
-var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete", "jobs", "history"}
+var keywords = []string{"echo", "exit", "type", "pwd", "cd", "complete", "jobs", "history", "declare"}
 var Path string = os.Getenv("PATH")
 var Home string = os.Getenv("HOME")
 var HistoryFile string = os.Getenv("HISTFILE")
