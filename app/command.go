@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"unicode"
 )
 
 // TODO for pipelines, we need to have a slice of commands. Parser can return this slice.
@@ -120,6 +121,10 @@ func (command *Command) handleDeclare() {
 	default:
 		declaration := strings.Split(command.parts[0], "=")
 		name := declaration[0]
+		if !validateVarName(name) {
+			fmt.Fprintf(command.errOut, "%s: `%s': not a valid identifier\n", command.keyword, command.parts[0])
+			return
+		}
 		val := declaration[1]
 		declarations[name] = val
 	}
@@ -164,4 +169,17 @@ func (command *Command) checkPath(path string) bool {
 		return true
 	}
 	return false
+}
+
+func validateVarName(varname string) bool {
+	if unicode.IsDigit(rune(varname[0])) {
+		return false
+	}
+	for i := 1; i < len(varname); i++ {
+		ch := rune(varname[i])
+		if !unicode.IsLetter(ch) && !unicode.IsDigit(ch) && ch != '_' {
+			return false
+		}
+	}
+	return true
 }
