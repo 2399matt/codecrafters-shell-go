@@ -85,6 +85,7 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s: command not found\r\n", input)
 			continue
 		}
+		history.pushEntry(input)
 		command.handleCommand()
 		select {
 		case job := <-cleanup:

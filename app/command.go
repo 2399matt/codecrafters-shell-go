@@ -88,6 +88,8 @@ func (command *Command) handleCommand() {
 		command.handleComplete()
 	case "jobs":
 		handleJobs(command)
+	case "history":
+		history.listHistory(command.out)
 	default:
 		if !slices.Contains(keywords, command.keyword) {
 			if command.handleExec() {
