@@ -17,19 +17,29 @@ func decodeCommand(command string) (*Command, error) {
 		ch := command[i]
 		// for inline-variables, super fragile
 		if (!inSingleQuote) && ch == '$' {
+			braces := false
 			i++
 			start := i
-			for i < len(command) && (unicode.IsLetter(rune(command[i])) || unicode.IsDigit(rune(command[i])) || command[i] == '_') {
+			if i < len(command) && command[i] == '{' {
 				i++
+				start = i
+				for i < len(command) && command[i] != '}' {
+					i++
+				}
+				braces = true
+			} else {
+				for i < len(command) && (unicode.IsLetter(rune(command[i])) || unicode.IsDigit(rune(command[i])) || command[i] == '_') {
+					i++
+				}
 			}
 			key := command[start:i]
 			if val, ok := declarations[key]; !ok {
 				log.Fatalf("Unknown variable found in parsing: %s\n", key)
 			} else {
 				curr.WriteString(val)
-				//parts = append(parts, curr.String())
-				//curr.Reset()
-				i--
+				if !braces {
+					i--
+				}
 				continue
 			}
 		}
