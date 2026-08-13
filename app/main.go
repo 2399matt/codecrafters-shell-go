@@ -98,19 +98,28 @@ func main() {
 		if err := term.Restore(int(os.Stdin.Fd()), old); err != nil {
 			panic(err)
 		}
-		command, err := decodeCommand(input)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "%s: command not found\r\n", input)
-			continue
+		commands := make([]*Command, 0)
+		segs := strings.Split(input, "|")
+		for _, segment := range segs {
+			cmd, err := decodeCommand(segment)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "%s: command not found\r\n", input)
+				continue
+			}
+			commands = append(commands, cmd)
 		}
 		history.pushEntry(input)
-		command.handleCommand()
+		pipeline := connect(commands)
+		if pipeline == nil {
+			continue
+		}
+		pipeline.launchCommands()
 		select {
 		case job := <-cleanup:
 			jobHandler.mu.Lock()
 			if !job.reported {
 				job.reported = true
-				fmt.Fprintf(command.out, "[%d]+  %s                 %s\n", job.id, "Done", job.command)
+				fmt.Fprintf(commands[len(commands)-1].out, "[%d]+  %s                 %s\n", job.id, "Done", job.command)
 				delete(jobHandler.jobs, job.id)
 				jobHandler.runningId--
 			}

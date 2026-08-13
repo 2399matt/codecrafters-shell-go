@@ -7,9 +7,15 @@ import (
 )
 
 func (command *Command) prepCommand() (func(), func(), error) {
-	command.out = terminalOut
-	command.in = os.Stdin
-	command.errOut = terminalErr
+	if command.out == nil {
+		command.out = terminalOut
+	}
+	if command.in == nil {
+		command.in = os.Stdin
+	}
+	if command.errOut == nil {
+		command.errOut = terminalErr
+	}
 	parts := make([]string, 0, len(command.parts))
 	var closeFunc func() = nil
 	var errCloseFunc func() = nil

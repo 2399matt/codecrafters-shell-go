@@ -139,6 +139,7 @@ func (command *Command) handleExec() bool {
 			cmd.Args = append(cmd.Args, command.parts...)
 			cmd.Stdout = command.out
 			cmd.Stderr = command.errOut
+			cmd.Stdin = command.in
 			if err := cmd.Run(); err != nil {
 				// wtf
 				return true

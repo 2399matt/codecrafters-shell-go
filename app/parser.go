@@ -6,6 +6,8 @@ import (
 	"unicode"
 )
 
+// need this to return a slice of commands.
+// if | is encountered, new command needs to be started
 func decodeCommand(command string) (*Command, error) {
 	cmd := &Command{}
 	parts := make([]string, 0)
