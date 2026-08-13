@@ -13,20 +13,21 @@ import (
 )
 
 // TODO for pipelines, we need to have a slice of commands. Parser can return this slice.
-// handleCommand will need to be done async, and the setting up of the pipes out->in(next) needs to be done
-// jobs will also be fragile, & will need to register an entire pipe command, not just parts (no idea how to do that yet)
+// pipes will have to be setup for the slice of commands out(n) -> in(n+1), then handleCommand can be called with goroutines per command, don't think it will work if sync.
+// jobs will also be fragile, & will need to register an entire pipe command, not just parts (no ideas atm)
 var completion = NewCompletion()
 
 type Command struct {
 	isJob   bool
 	keyword string
 	parts   []string
-	in      io.Reader
-	out     io.Writer
-	errOut  io.Writer
+	// in for pipeline addition
+	in     io.Reader
+	out    io.Writer
+	errOut io.Writer
 }
 
-// Need carriage bytes if write stream is set to raw terminal
+// Need carriage byte if write stream is set to raw terminal
 // This or a helper that checks on each call
 type TerminalWriter struct {
 	w io.Writer

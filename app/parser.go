@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"strings"
 	"unicode"
 )
@@ -14,6 +15,24 @@ func decodeCommand(command string) (*Command, error) {
 	var curr strings.Builder
 	for i := 0; i < len(command); i++ {
 		ch := command[i]
+		// for inline-variables, super fragile
+		if (!inSingleQuote) && ch == '$' {
+			i++
+			start := i
+			for i < len(command) && (unicode.IsLetter(rune(command[i])) || unicode.IsDigit(rune(command[i])) || command[i] == '_') {
+				i++
+			}
+			key := command[start:i]
+			if val, ok := declarations[key]; !ok {
+				log.Fatalf("Unknown variable found in parsing: %s\n", key)
+			} else {
+				curr.WriteString(val)
+				//parts = append(parts, curr.String())
+				//curr.Reset()
+				i--
+				continue
+			}
+		}
 		if (!inSingleQuote) && (ch == '\\' && i != len(command)-1) {
 			if inDoubleQuote {
 				temp := command[i+1]
