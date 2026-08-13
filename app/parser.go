@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"unicode"
 )
@@ -34,7 +33,8 @@ func decodeCommand(command string) (*Command, error) {
 			}
 			key := command[start:i]
 			if val, ok := declarations[key]; !ok {
-				log.Fatalf("Unknown variable found in parsing: %s\n", key)
+				//log.Fatalf("Unknown variable found in parsing: %s\n", key)
+				continue
 			} else {
 				curr.WriteString(val)
 				if !braces {
