@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+// jobs will currently NOT work with pipes.
+
 type Job struct {
 	id       int
 	command  string
