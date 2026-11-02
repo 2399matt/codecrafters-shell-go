@@ -28,6 +28,18 @@ func main() {
 	}
 	buf := bufio.NewReader(os.Stdin)
 	for {
+		select {
+		case job := <-cleanup:
+			jobHandler.mu.Lock()
+			if !job.reported {
+				job.reported = true
+				fmt.Printf("[%d]+  %s                 %s\n", job.id, "Done", job.command)
+				delete(jobHandler.jobs, job.id)
+				jobHandler.runningId--
+			}
+			jobHandler.mu.Unlock()
+		default:
+		}
 		old, err := term.MakeRaw(int(os.Stdin.Fd()))
 		if err != nil {
 			panic(err)
@@ -98,6 +110,9 @@ func main() {
 		if err := term.Restore(int(os.Stdin.Fd()), old); err != nil {
 			panic(err)
 		}
+		if strings.TrimSpace(input) == "" {
+			continue
+		}
 		commands := make([]*Command, 0)
 		segs := strings.Split(input, "|")
 		for _, segment := range segs {
@@ -114,18 +129,7 @@ func main() {
 			continue
 		}
 		pipeline.launchCommands()
-		select {
-		case job := <-cleanup:
-			jobHandler.mu.Lock()
-			if !job.reported {
-				job.reported = true
-				fmt.Fprintf(commands[len(commands)-1].out, "[%d]+  %s                 %s\n", job.id, "Done", job.command)
-				delete(jobHandler.jobs, job.id)
-				jobHandler.runningId--
-			}
-			jobHandler.mu.Unlock()
-		default:
-		}
+		//TODO Give jobs their corresponding stdOut and have this running on another thread???
 	}
 }
 

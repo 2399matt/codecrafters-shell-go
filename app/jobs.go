@@ -48,6 +48,7 @@ func (command *Command) setupJob() {
 	jobHandler.jobs[curr] = job
 	jobHandler.mu.Unlock()
 	fmt.Fprintf(command.out, "[%d] %d\n", curr, cmd.Process.Pid)
+	//TODO No error handling here on cmd.wait ?
 	go func(job *Job) {
 		cmd.Wait()
 		jobHandler.mu.Lock()

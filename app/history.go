@@ -34,6 +34,9 @@ func (h *History) pushEntry(entry string) {
 }
 
 func (h *History) stepBack() string {
+	if len(h.entries) == 0 {
+		return ""
+	}
 	if h.cursor > 0 {
 		h.cursor--
 	}
@@ -41,6 +44,9 @@ func (h *History) stepBack() string {
 }
 
 func (h *History) stepForward() string {
+	if len(h.entries) == 0 {
+		return ""
+	}
 	if h.cursor < len(h.entries)-1 {
 		h.cursor++
 	}
